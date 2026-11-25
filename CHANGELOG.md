@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- XuatArtboardNen.jsx v1.4.0: thêm ô "Tên file" (để trống thì dùng tên file PSD). Xuất có giới hạn MB giờ chỉ xuất 1 lần; nếu vẫn lố thì hỏi bạn có muốn xuất lại nhỏ hơn không, không tự thử lại.
 - XuatArtboardNen.jsx v1.3.0: xuất xong có nút "Mở thư mục chứa file" (mở File Explorer, tô sẵn file vừa xuất) và nút "Mở file PDF" / "Mở ảnh đầu tiên".
 - XuatArtboardNen.jsx v1.2.0: nút "Chất lượng cao nhất" giờ luôn xuất 300 DPI, chất lượng 12, không giới hạn dung lượng, chỉ 1 lần. Khi có giới hạn MB, script ước tính trước bằng vài trang mẫu nên thường chỉ xuất 1 lần, nhanh hơn nhiều.
 - Panel Tool Launcher v1.2.0: thêm khung "Có gì mới" (hiện ghi chú trước khi cập nhật và sau khi cập nhật xong), nhãn MỚI cho tool vừa thêm hoặc vừa cập nhật, link "Có gì mới" ở cuối bảng.

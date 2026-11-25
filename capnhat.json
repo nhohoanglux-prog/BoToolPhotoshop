@@ -22,12 +22,16 @@
     {
       "path": "XuatArtboardNen.jsx",
       "name": "Xuất artboard nén theo dung lượng",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "date": "2026-11-25",
-      "notes": "Xuất xong có nút \"Mở thư mục chứa file\" (mở File Explorer, tô sẵn file vừa xuất) và nút \"Mở file PDF\" / \"Mở ảnh đầu tiên\"."
+      "notes": "Thêm ô \"Tên file\" (để trống thì dùng tên file PSD). Xuất có giới hạn MB giờ chỉ xuất 1 lần; nếu vẫn lố thì hỏi bạn có muốn xuất lại nhỏ hơn không, không tự thử lại."
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "XuatArtboardNen.jsx v1.4.0: thêm ô \"Tên file\" (để trống thì dùng tên file PSD). Xuất có giới hạn MB giờ chỉ xuất 1 lần; nếu vẫn lố thì hỏi bạn có muốn xuất lại nhỏ hơn không, không tự thử lại."
+    },
     {
       "date": "2026-11-25",
       "text": "XuatArtboardNen.jsx v1.3.0: xuất xong có nút \"Mở thư mục chứa file\" (mở File Explorer, tô sẵn file vừa xuất) và nút \"Mở file PDF\" / \"Mở ảnh đầu tiên\"."

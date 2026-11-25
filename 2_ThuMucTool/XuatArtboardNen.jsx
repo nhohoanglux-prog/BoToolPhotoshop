@@ -3,7 +3,7 @@
   @name: Xuất artboard nén theo dung lượng
   @group: Xuất file
   @desc: Xuất tất cả artboard theo thứ tự trang ra PDF, JPG hoặc PNG, tự nén cho tổng dung lượng vừa giới hạn MB.
-  @version: 1.3.0
+  @version: 1.4.0
   @date: 2026-11-25
 
   XuatArtboardNen.jsx
@@ -87,6 +87,12 @@ function sortByName(list) {
 // ---------- Hộp thoại ----------
 var FMT_NAMES = ['PDF', 'JPG', 'PNG'];
 
+// Bỏ ký tự Windows không cho dùng trong tên file, bỏ đuôi .pdf/.jpg/.png nếu lỡ gõ
+function cleanName(str) {
+    var x = String(str || '').replace(/[\\\/:*?"<>|]/g, '').replace(/^\s+|\s+$/g, '');
+    return x.replace(/\.(pdf|jpe?g|png)$/i, '').replace(/^\s+|\s+$/g, '');
+}
+
 function showDialog(total, docName, docFolder) {
     var w = new Window('dialog', 'Xuất artboard nén theo dung lượng');
     w.alignChildren = 'fill';
@@ -133,6 +139,10 @@ function showDialog(total, docName, docFolder) {
     p3.alignChildren = 'fill';
     var pdfFile = new File(docFolder + '/' + docName + '.pdf');
     var imgFolder = new Folder(docFolder + '/' + docName + '_xuat');
+    var gName = p3.add('group');
+    gName.add('statictext', undefined, 'Tên file:');
+    var nameTxt = gName.add('edittext', undefined, ''); nameTxt.characters = 30;
+    var nameHint = gName.add('statictext', undefined, '(để trống = ' + docName + ')');
     var g6 = p3.add('group');
     var outTxt = g6.add('statictext', undefined, ''); outTxt.characters = 45;
     var browse = g6.add('button', undefined, 'Chọn...');
@@ -141,15 +151,23 @@ function showDialog(total, docName, docFolder) {
         var f = fmt.selection.index;
         q.enabled = qLbl.enabled = (f !== 2);
         note.text = f === 2
-            ? 'PNG không mất dữ liệu nên script chỉ hạ độ phân giải cho tới khi tổng dung lượng vừa giới hạn.'
-            : 'Script hạ chất lượng JPEG trước, rồi hạ DPI cho tới khi tổng dung lượng vừa giới hạn.';
-        outTxt.text = f === 0 ? pdfFile.fsName : imgFolder.fsName + '  (thư mục)';
+            ? 'PNG không mất dữ liệu nên script chỉ hạ độ phân giải cho vừa giới hạn. Đo nhanh vài trang rồi xuất 1 lần.'
+            : 'Script đo nhanh vài trang, chọn sẵn chất lượng và DPI cho vừa giới hạn, rồi xuất 1 lần.';
+        var nm = cleanName(nameTxt.text) || docName;
+        outTxt.text = f === 0 ? pdfFile.parent.fsName + '\\' + nm + '.pdf'
+                              : imgFolder.fsName + '\\' + nm + '_01' + (f === 2 ? '.png' : '.jpg') + ' ...';
     }
     fmt.onChange = refresh;
+    nameTxt.onChanging = refresh;
     browse.onClick = function () {
         if (fmt.selection.index === 0) {
-            var f = pdfFile.saveDlg('Lưu PDF thành', 'PDF:*.pdf');
-            if (f) { if (!/\.pdf$/i.test(f.name)) f = new File(f.fsName + '.pdf'); pdfFile = f; }
+            var cur = new File(pdfFile.parent.fsName + '/' + (cleanName(nameTxt.text) || docName) + '.pdf');
+            var f = cur.saveDlg('Lưu PDF thành', 'PDF:*.pdf');
+            if (f) {
+                if (!/\.pdf$/i.test(f.name)) f = new File(f.fsName + '.pdf');
+                pdfFile = f;
+                nameTxt.text = decodeURI(f.name).replace(/\.pdf$/i, '');
+            }
         } else {
             var d = Folder.selectDialog('Chọn thư mục lưu ảnh');
             if (d) imgFolder = d;
@@ -180,9 +198,9 @@ function showDialog(total, docName, docFolder) {
         dpi: Math.max(30, parseInt(dpi.text, 10) || 150),
         q: Math.min(12, Math.max(1, parseInt(q.text, 10) || 10)),
         minDpi: Math.max(30, parseInt(minDpi.text, 10) || 72),
-        pdfFile: pdfFile,
+        pdfFile: new File(pdfFile.parent.fsName + '/' + (cleanName(nameTxt.text) || docName) + '.pdf'),
         imgFolder: imgFolder,
-        baseName: docName
+        baseName: cleanName(nameTxt.text) || docName
     };
 }
 
@@ -362,7 +380,7 @@ function renderSpread(M, a, b, file, fmt, q, curDpi) {
 function renderAll(M, O, order, pages, tmp, curDpi, curQ, tries) {
     var files = [], total = 0, i, f;
     var old = tmp.getFiles(); for (i = 0; i < old.length; i++) try { old[i].remove(); } catch (e) {}
-    var label = 'Lần xuất ' + tries + ' (' + Math.round(curDpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng ' + curQ) + '): ';
+    var label = (tries > 1 ? 'Đang xuất lại' : 'Đang xuất') + ' (' + Math.round(curDpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng ' + curQ) + '): ';
 
     if (O.fmt === 0) {
         // PDF: mỗi artboard 1 ảnh JPEG, trang đôi được ghép ngay trong PDF
@@ -433,9 +451,9 @@ function planSettings(M, O, order, pages, tmp, dpi, q, log) {
         var u = Math.round(i * (n - 1) / (k - 1));
         if (!sample.length || sample[sample.length - 1] !== u) sample.push(u);
     }
-    var target = O.maxBytes * 0.92;                     // chừa 8% cho chắc
+    var target = O.maxBytes * 0.9;                      // chừa 10% cho chắc
     function note(d, qq, e) {
-        log.push('Ước tính (' + sample.length + ' trang mẫu): ' + Math.round(d) + ' DPI' +
+        log.push('Đo nhanh ' + sample.length + ' trang mẫu: ' + Math.round(d) + ' DPI' +
                  (O.fmt === 2 ? '' : ', chất lượng ' + qq) + ' → khoảng ' + (e / 1000000).toFixed(1) + ' MB');
     }
     var e1 = estimate(M, O, order, pages, tmp, sample, dpi, q); note(dpi, q, e1);
@@ -554,13 +572,15 @@ function showResult(msg, saved, isPdf) {
             var P = planSettings(M, O, order, pages, tmp, curDpi, curQ, log);
             curDpi = P.dpi; curQ = P.q;
         }
-        // Tối đa 3 lần xuất đầy đủ (thường chỉ 1 lần nhờ bước ước tính ở trên)
+        // Chỉ xuất 1 lần. Nếu vẫn lố giới hạn thì HỎI bạn có muốn xuất lại nhỏ hơn không, không tự thử lại.
         while (tries < 3) {
             tries++;
             R = renderAll(M, O, order, pages, tmp, curDpi, curQ, tries);
-            log.push('Lần xuất ' + tries + ': ' + Math.round(curDpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng ' + curQ) +
+            log.push('Xuất' + (tries > 1 ? ' lại' : '') + ': ' + Math.round(curDpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng ' + curQ) +
                      ' → ' + (R.total / 1000000).toFixed(2) + ' MB');
             if (!O.maxBytes || R.total <= O.maxBytes) { ok = true; break; }
+            if (!confirm('Kết quả ' + (R.total / 1000000).toFixed(2) + ' MB, vượt giới hạn ' + (O.maxBytes / 1000000) + ' MB.\n\n' +
+                         'Có = xuất lại một lần nữa ở mức nhỏ hơn cho vừa.\nKhông = giữ file này luôn.')) break;
             var ratio = O.maxBytes / R.total;
             if (curDpi > O.minDpi) {
                 curDpi = Math.max(O.minDpi, Math.floor(curDpi * Math.sqrt(ratio) * 0.93));
