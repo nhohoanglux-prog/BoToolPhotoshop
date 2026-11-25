@@ -20,6 +20,13 @@
       "notes": "Bản đầu tiên."
     },
     {
+      "path": "XoayIsometric.jsx",
+      "name": "Xoay ảnh Isometric",
+      "version": "1.0.0",
+      "date": "2026-11-25",
+      "notes": "Tool mới \"Xoay ảnh Isometric\": biến ảnh phẳng thành mặt trên / mặt trái / mặt phải theo 10 kiểu góc (isometric 30°, dimetric, trục đo 45°, 30/60, cavalier, cabinet…), giữ Smart Object để sửa lại được, và nút \"Dựng khối hộp\" từ 3 ảnh."
+    },
+    {
       "path": "XuatArtboardNen.jsx",
       "name": "Xuất artboard nén theo dung lượng",
       "version": "1.4.0",
@@ -28,6 +35,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "XoayIsometric.jsx v1.0.0: tool mới \"Xoay ảnh Isometric\": biến ảnh phẳng thành mặt trên / mặt trái / mặt phải theo 10 kiểu góc (isometric 30°, dimetric, trục đo 45°, 30/60, cavalier, cabinet…), giữ Smart Object để sửa lại được, và nút \"Dựng khối hộp\" từ 3 ảnh."
+    },
     {
       "date": "2026-11-25",
       "text": "XuatArtboardNen.jsx v1.4.0: thêm ô \"Tên file\" (để trống thì dùng tên file PSD). Xuất có giới hạn MB giờ chỉ xuất 1 lần; nếu vẫn lố thì hỏi bạn có muốn xuất lại nhỏ hơn không, không tự thử lại."
