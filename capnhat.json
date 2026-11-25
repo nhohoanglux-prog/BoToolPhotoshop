@@ -27,6 +27,13 @@
       "notes": "Bản đầu tiên."
     },
     {
+      "path": "SoTrangTuDong.jsx",
+      "name": "Số trang tự động",
+      "version": "1.0.0",
+      "date": "2026-11-25",
+      "notes": "Tool mới \"Số trang tự động\" kiểu Canva: gắn số cho mọi artboard theo thứ tự trang, 3 kiểu \"01\", \"Trang 01\", \"01 / 43\" (hoặc tự gõ mẫu), đối xứng như sách (trang trái số ở góc trái, trang phải ở góc phải), bìa không hiện số nhưng vẫn tính là trang 1, chọn trang bắt đầu, số bắt đầu và trang bỏ qua; chỉnh tay 1 số trang (font, cỡ, màu, vị trí) rồi chạy tool, bấm \"Cập nhật tất cả\" là mọi trang đổi theo. Kiểu được lưu ngay trong file."
+    },
+    {
       "path": "XoayIsometric.jsx",
       "name": "Xoay ảnh Isometric",
       "version": "1.6.0",
@@ -42,6 +49,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "SoTrangTuDong.jsx v1.0.0: tool mới \"Số trang tự động\" kiểu Canva: gắn số cho mọi artboard theo thứ tự trang, 3 kiểu \"01\", \"Trang 01\", \"01 / 43\" (hoặc tự gõ mẫu), đối xứng như sách (trang trái số ở góc trái, trang phải ở góc phải), bìa không hiện số nhưng vẫn tính là trang 1, chọn trang bắt đầu, số bắt đầu và trang bỏ qua; chỉnh tay 1 số trang (font, cỡ, màu, vị trí) rồi chạy tool, bấm \"Cập nhật tất cả\" là mọi trang đổi theo. Kiểu được lưu ngay trong file."
+    },
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.6.0: hộp thoại gọn hơn nhiều (bỏ khung minh hoạ to, gom chữ hướng dẫn vào nút \"?\", các nút xếp sát nhau); lần đầu mở nằm sát bên phải màn hình, thanh tiêu đề luôn nằm trong màn hình để kéo được; nhớ vị trí bạn kéo tới cho lần sau."
@@ -77,10 +88,6 @@
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.1.0: chia 2 thẻ \"Xoay 1 ảnh\" (chỉ xoay đúng ảnh bạn chọn) và \"Dựng khối hộp từ 3 ảnh\"; xem trước trực tiếp trên ảnh, bấm \"Xong\" để giữ, \"Hủy\" để trả lại như cũ; sửa lỗi khối hộp bị bay lung tung: khối giờ dựng ngay chỗ 3 ảnh đang nằm và gom group tại chỗ (vẫn nằm trong artboard)."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "Panel Tool Launcher v1.3.0: hết treo ở \"Đang quét thư mục…\" khi Photoshop đang Transform hoặc mở hộp thoại; panel báo rõ và tự chạy tiếp khi Photoshop rảnh. Sửa lỗi ghi nhầm \"tool mới\" cho tool đã có."
     }
   ]
 }
