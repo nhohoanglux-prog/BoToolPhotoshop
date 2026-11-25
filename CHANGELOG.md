@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- Panel Tool Launcher v1.3.0: hết treo ở "Đang quét thư mục…" khi Photoshop đang Transform hoặc mở hộp thoại; panel báo rõ và tự chạy tiếp khi Photoshop rảnh. Sửa lỗi ghi nhầm "tool mới" cho tool đã có.
 - XoayIsometric.jsx v1.0.0: tool mới "Xoay ảnh Isometric": biến ảnh phẳng thành mặt trên / mặt trái / mặt phải theo 10 kiểu góc (isometric 30°, dimetric, trục đo 45°, 30/60, cavalier, cabinet…), giữ Smart Object để sửa lại được, và nút "Dựng khối hộp" từ 3 ảnh.
 - XuatArtboardNen.jsx v1.4.0: thêm ô "Tên file" (để trống thì dùng tên file PSD). Xuất có giới hạn MB giờ chỉ xuất 1 lần; nếu vẫn lố thì hỏi bạn có muốn xuất lại nhỏ hơn không, không tự thử lại.
 - XuatArtboardNen.jsx v1.3.0: xuất xong có nút "Mở thư mục chứa file" (mở File Explorer, tô sẵn file vừa xuất) và nút "Mở file PDF" / "Mở ảnh đầu tiên".

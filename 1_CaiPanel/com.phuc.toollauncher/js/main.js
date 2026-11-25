@@ -3,7 +3,7 @@
     'use strict';
 
     // ===== Phiên bản panel – tăng số này mỗi lần sửa panel =====
-    var PANEL_VERSION = '1.2.0';
+    var PANEL_VERSION = '1.3.0';
     var PANEL_DATE = '2026-11-25';
     // Nơi lấy bản mới (kho GitHub công khai, cùng cấu trúc với file zip)
     var UPDATE_BASE = 'https://raw.githubusercontent.com/nhohoanglux-prog/BoToolPhotoshop/main/';
@@ -11,7 +11,7 @@
     var cep = window.__adobe_cep__;
     var KEY_FOLDER = 'tl.folder', KEY_RECENT = 'tl.recent', KEY_CLOSED = 'tl.closed';
     var KEY_SEEN = 'tl.seen', NEW_DAYS = 7;
-    var tools = [], visible = [], selIndex = 0, busy = false, lastInfo = null;
+    var tools = [], visible = [], selIndex = 0, busy = false, lastInfo = null, toolsLoaded = false, autoChecked = false, updateQueued = false, pendingHost = 0, busyTimer = null;
 
     var $ = function (id) { return document.getElementById(id); };
     var searchEl = $('search'), listEl = $('list'), statusEl = $('status');
@@ -21,7 +21,18 @@
 
     function evalHost(code, cb) {
         if (!cep) { if (window.TL_MOCK) return window.TL_MOCK(code, cb); return cb && cb(''); }
-        cep.evalScript(code, function (r) { if (cb) cb(r); });
+        // Khi Photoshop đang Transform / mở hộp thoại, lệnh sẽ phải xếp hàng chờ.
+        // Sau 3 giây chưa có trả lời thì báo cho người dùng; lệnh vẫn tự chạy tiếp khi Photoshop rảnh.
+        pendingHost++;
+        if (!busyTimer) busyTimer = setTimeout(function () {
+            busyTimer = null;
+            if (pendingHost > 0) setStatus('⏳ Photoshop đang bận (đang Transform, đang vẽ hoặc đang mở hộp thoại). Bấm Enter hoặc Esc trong Photoshop để xong thao tác, panel sẽ tự chạy tiếp.', true);
+        }, 3000);
+        cep.evalScript(code, function (r) {
+            pendingHost = Math.max(0, pendingHost - 1);
+            if (!pendingHost && busyTimer) { clearTimeout(busyTimer); busyTimer = null; }
+            if (cb) cb(r);
+        });
     }
     function call(fn, arg, cb) {
         var code = arg === undefined ? fn + '()' : fn + '("' + encodeURIComponent(arg) + '")';
@@ -55,14 +66,25 @@
         call('TL_listTools', folder, function (res) {
             var data;
             try { data = JSON.parse(res); } catch (e) { data = { error: 'Không đọc được kết quả: ' + res }; }
-            if (data.error) { tools = []; render(); setStatus(data.error + ' – ' + folder, true); return; }
+            if (data.error) { tools = []; toolsLoaded = true; render(); setStatus(data.error + ' – ' + folder, true); afterScan(); return; }
             tools = data.tools || [];
+            toolsLoaded = true;
             tools.sort(function (a, b) { return a.name.localeCompare(b.name, 'vi'); });
             tools.forEach(function (t) { t.key = fold(t.name + ' ' + t.desc + ' ' + t.group + ' ' + t.file); });
             markNewTools();
             render();
             setStatus(tools.length + ' tool · ' + folder);
+            afterScan();
         });
+    }
+
+    // Sau khi quét xong: kiểm tra bản mới (lần đầu) hoặc chạy cập nhật đang chờ
+    function afterScan() {
+        if (updateQueued) { updateQueued = false; runUpdate(); return; }
+        if (cep && !autoChecked) {
+            autoChecked = true;
+            checkUpdates(function (err, jobs) { if (!err && jobs.length) { markUpdate(true, jobs.length); if (newsEl.hidden) showPending(jobs); } });
+        }
     }
 
     function pickFolder() {
@@ -265,7 +287,8 @@
                 jobs.push({ kind: 'panel', label: 'Panel Tool Launcher v' + PANEL_VERSION + ' → v' + info.panel.version, files: info.panel.files || [], version: info.panel.version, notes: info.panel.notes || '' });
             }
             var folder = store(KEY_FOLDER);
-            (info.tools || []).forEach(function (r) {
+            // Chưa quét xong thư mục thì chưa biết tool nào đã có, nên chưa so tool
+            (toolsLoaded ? info.tools || [] : []).forEach(function (r) {
                 var local = tools.filter(function (t) { return baseName(t.path) === baseName(r.path); })[0];
                 if (local && cmpVer(r.version, local.version) <= 0) return;
                 if (!local && !folder) return;
@@ -283,6 +306,12 @@
     function runUpdate() {
         if (busy) return;
         if (!cep) { setStatus('Chỉ cập nhật được khi mở trong Photoshop.', true); return; }
+        if (!toolsLoaded && store(KEY_FOLDER)) {
+            updateQueued = true;
+            setStatus('Đang chờ quét xong thư mục tool rồi mới cập nhật…');
+            if (!pendingHost) reload();
+            return;
+        }
         busy = true;
         setStatus('Đang kiểm tra bản mới…');
         checkUpdates(function (err, jobs) {
@@ -369,10 +398,8 @@
     }
     var last = store('tl.lastUpdateMsg');
     if (last) { try { localStorage.removeItem('tl.lastUpdateMsg'); } catch (e) {} setTimeout(function () { setStatus(last); showJustUpdated(); }, 900); }
-    // Tự kiểm tra bản mới khi mở panel (chỉ báo, không tự cài)
-    if (cep) setTimeout(function () {
-        checkUpdates(function (err, jobs) { if (!err && jobs.length) { markUpdate(true, jobs.length); if (newsEl.hidden) showPending(jobs); } });
-    }, 2500);
+    // Kiểm tra bản mới chạy trong afterScan() sau khi quét xong thư mục
+    if (cep && !store(KEY_FOLDER)) afterScan();
     // Tự quét lại khi mở lại panel (để thấy tool mới thêm)
     document.addEventListener('visibilitychange', function () { if (!document.hidden) reload(); });
     setTimeout(function () { searchEl.focus(); }, 300);

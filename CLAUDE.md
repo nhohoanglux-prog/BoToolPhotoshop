@@ -25,7 +25,8 @@ HuongDan.txt                      hướng dẫn cài 5 bước (UTF-8 có BOM, 
 - Quét thư mục tool người dùng chọn (tối đa 3 cấp), tìm kiếm không dấu, chia nhóm, bấm 1 lần là chạy bằng `$.evalFile`.
 - Hiện phiên bản/ngày của từng tool; cuối bảng hiện phiên bản panel.
 - Cập nhật: so `capnhat.json` với phiên bản tại máy, tải hết rồi mới ghi đè (qua `TL_writeFile` trong host.jsx, .jsx ghi kèm BOM). Tool khớp theo tên file. Panel cập nhật thì tự tải lại.
-- Chưa được thử trên Photoshop thật (chỉ thử trên trình duyệt với mock).
+- Khi Photoshop đang Transform/mở hộp thoại, evalScript xếp hàng chờ: sau 3 giây panel báo "Photoshop đang bận" và tự chạy tiếp; chỉ so phiên bản tool sau khi quét xong thư mục (tránh ghi nhầm "tool mới").
+- Người dùng đã chạy panel trên Photoshop thật (v1.2.0 hoạt động).
 
 ## Quy ước đầu file mỗi tool (bắt buộc, lưu UTF-8 có BOM)
 ```

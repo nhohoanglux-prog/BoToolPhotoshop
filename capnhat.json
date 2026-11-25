@@ -1,8 +1,8 @@
 {
   "panel": {
-    "version": "1.2.0",
+    "version": "1.3.0",
     "date": "2026-11-25",
-    "notes": "Thêm khung \"Có gì mới\" (hiện ghi chú trước khi cập nhật và sau khi cập nhật xong), nhãn MỚI cho tool vừa thêm hoặc vừa cập nhật, link \"Có gì mới\" ở cuối bảng.",
+    "notes": "Hết treo ở \"Đang quét thư mục…\" khi Photoshop đang Transform hoặc mở hộp thoại; panel báo rõ và tự chạy tiếp khi Photoshop rảnh. Sửa lỗi ghi nhầm \"tool mới\" cho tool đã có.",
     "files": [
       "CSXS/manifest.xml",
       "css/style.css",
@@ -35,6 +35,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "Panel Tool Launcher v1.3.0: hết treo ở \"Đang quét thư mục…\" khi Photoshop đang Transform hoặc mở hộp thoại; panel báo rõ và tự chạy tiếp khi Photoshop rảnh. Sửa lỗi ghi nhầm \"tool mới\" cho tool đã có."
+    },
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.0.0: tool mới \"Xoay ảnh Isometric\": biến ảnh phẳng thành mặt trên / mặt trái / mặt phải theo 10 kiểu góc (isometric 30°, dimetric, trục đo 45°, 30/60, cavalier, cabinet…), giữ Smart Object để sửa lại được, và nút \"Dựng khối hộp\" từ 3 ảnh."
