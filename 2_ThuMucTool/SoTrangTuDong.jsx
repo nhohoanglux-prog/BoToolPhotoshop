@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), đối xứng như sách; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.2.0
+  @version: 1.2.1
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,8 +18,9 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.2.0';
+var TOOL_VERSION = '1.2.1';
 var TAG = '[Số trang]';
+var LOG = [];   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
 
@@ -219,6 +220,7 @@ function applyAll(st, arts, fxFromId, limit) {
     var col = hexToColor(st.color);
     var font = fontExists(st.font) ? st.font : null;
     var stat = { added: 0, updated: 0, removed: 0, warns: [] };
+    LOG = ['Số trang tự động v' + TOOL_VERSION + ' | ' + new Date() + ' | file ' + doc.name + ' ' + px(doc.width) + 'x' + px(doc.height) + ' px, ' + res + ' ppi'];
     if (!font) stat.warns.push('Không tìm thấy font "' + st.font + '", giữ font hiện có.');
 
     var fxOK = false;
@@ -244,46 +246,64 @@ function applyAll(st, arts, fxFromId, limit) {
         var isNew = false;
         var txt = pageText(st, arts, i);
         if (lyr && !(lyr.typename == 'ArtLayer' && lyr.kind == LayerKind.TEXT)) { try { lyr.remove(); } catch (e) { } lyr = null; }
-        if (!lyr) {
-            lyr = makeTextLayer(doc, set, ab, txt, st.size * 72 / res);
-            isNew = true;
-        }
         var v = Math.floor(st.pos / 3), h = st.pos % 3;
         if (st.mirror && ab.rowLen >= 2 && ab.col % 2 == 0) h = 2 - h;   // trang trái của cặp: lật ngang
+        if (!lyr) {
+            lyr = makeTextLayer(doc, set, ab, txt, st, h, v, res);
+            isNew = true;
+        }
 
         var ti = lyr.textItem;
         try { if (ti.kind != TextType.POINTTEXT) ti.kind = TextType.POINTTEXT; } catch (e) { }
-        try { ti.justification = h == 0 ? Justification.LEFT : h == 1 ? Justification.CENTER : Justification.RIGHT; } catch (e) { }
+        var just = h == 0 ? Justification.LEFT : h == 1 ? Justification.CENTER : Justification.RIGHT;
+        try { if (ti.justification != just) ti.justification = just; } catch (e) { }
         ti.contents = txt;
         if (font) ti.font = font;
         ti.size = new UnitValue(st.size * 72 / res, 'pt');   // px -> pt theo độ phân giải file
         ti.color = col;
-        if (isNew) ti.position = [new UnitValue(ab.left + ab.w / 2, 'px'), new UnitValue(ab.top + ab.h / 2, 'px')];
         lyr.name = TAG + ' ' + txt;
 
         // Canh theo khung chữ thật trong artboard. v1.1.0 đọc bounds DOM 1 lần nên trang trái bị lệch
         // ra giữa (bounds cũ sau khi đổi canh lề chữ). Giờ đo lại mới bằng Action Manager, dời rồi kiểm tra, tối đa 3 lần.
-        for (var tr = 0; tr < 3; tr++) {
-            var b = measureLayer(lyr);
+        // v1.2.1: dời bằng Action Manager (không dùng DOM translate) và kiểm tra lại sau khi dời.
+        var b0 = measureLayer(lyr), b = b0, moves = [];
+        for (var tr = 0; tr < 4; tr++) {
             var lw = b.R - b.L, lh = b.B - b.T;
             var tx = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + (ab.w - lw) / 2 : ab.left + ab.w - st.mx - lw;
             var ty = v == 0 ? ab.top + st.my : v == 1 ? ab.top + (ab.h - lh) / 2 : ab.top + ab.h - st.my - lh;
             var dx = Math.round(tx - b.L), dy = Math.round(ty - b.T);
             if (Math.abs(dx) < 1 && Math.abs(dy) < 1) break;
-            lyr.translate(new UnitValue(dx, 'px'), new UnitValue(dy, 'px'));
+            moveLayerBy(lyr, dx, dy);
+            moves.push(dx + ',' + dy);
+            b = measureLayer(lyr);
         }
+        var lw2 = b.R - b.L;
+        var want = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + (ab.w - lw2) / 2 : ab.left + ab.w - st.mx - lw2;
+        var off = Math.round(b.L - want);
+        LOG.push('Trang ' + (i + 1) + ' (' + ab.name + ') ' + (h == 0 ? 'TRÁI' : h == 1 ? 'GIỮA' : 'PHẢI') +
+            ' | artboard x ' + Math.round(ab.left) + '..' + Math.round(ab.left + ab.w) + ' y ' + Math.round(ab.top) + '..' + Math.round(ab.top + ab.h) +
+            ' | chữ lúc đầu x ' + Math.round(b0.L) + '..' + Math.round(b0.R) + ' | dời ' + (moves.join(' ; ') || 'không') +
+            ' | chữ sau x ' + Math.round(b.L) + '..' + Math.round(b.R) + ' y ' + Math.round(b.T) + '..' + Math.round(b.B) + ' | lệch ' + off);
+        if (Math.abs(off) > 3) stat.warns.push('Trang thứ ' + (i + 1) + ': số còn lệch ' + off + ' px so với chỗ đúng.');
         prog('Đang gắn số: trang thứ ' + (i + 1) + '/' + arts.length, Math.round((i + 1) / arts.length * 100));
 
         if (fxOK) { try { doc.activeLayer = lyr; executeAction(c('PaFX'), undefined, DialogModes.NO); } catch (e) { } }
         if (isNew) stat.added++; else stat.updated++;
         done++; stat.pages.push(i + 1);
     }
+    writeLog();
+    if (stat.warns.length) stat.warns.push('Nhật ký chi tiết: ' + logFile().fsName + ' (gửi file này cho Claude).');
     return stat;
+}
+function logFile() { return new File(Folder.desktop.fsName + '/SoTrang_nhatky.txt'); }
+function writeLog() {
+    try { var f = logFile(); f.encoding = 'UTF-8'; f.open('w'); f.write('\uFEFF' + LOG.join('\r\n')); f.close(); } catch (e) { }
 }
 // Tạo layer chữ mới nằm trên cùng trong artboard.
 // v1.0.0 dùng artLayers.add() + kind = TEXT: trong artboard Photoshop báo
 // "The layer cannot contain text", nên giờ tạo bằng Action Manager (như bấm Type tool).
-function makeTextLayer(doc, set, ab, txt, pt) {
+function makeTextLayer(doc, set, ab, txt, st, h, v, res) {
+    var pt = st.size * 72 / res;
     // Chọn layer trên cùng của artboard (hoặc chính artboard nếu trống) để layer mới nằm trong đó
     try { doc.activeLayer = set.layers.length ? set.layers[0] : set; } catch (e) { }
     var W = px(doc.width), H = px(doc.height);
@@ -293,9 +313,19 @@ function makeTextLayer(doc, set, ab, txt, pt) {
     var t = new ActionDescriptor();
     t.putString(c('Txt '), txt);
     var p = new ActionDescriptor();
-    p.putUnitDouble(c('Hrzn'), c('#Prc'), (ab.left + ab.w / 2) / W * 100);
-    p.putUnitDouble(c('Vrtc'), c('#Prc'), (ab.top + ab.h / 2) / H * 100);
+    // Đặt ngay gần chỗ đúng, canh lề chữ có sẵn từ lúc tạo (không đổi canh lề sau)
+    var x = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + ab.w / 2 : ab.left + ab.w - st.mx;
+    var y = v == 0 ? ab.top + st.my + st.size : v == 1 ? ab.top + ab.h / 2 : ab.top + ab.h - st.my;
+    p.putUnitDouble(c('Hrzn'), c('#Prc'), x / W * 100);
+    p.putUnitDouble(c('Vrtc'), c('#Prc'), y / H * 100);
     t.putObject(c('TxtC'), c('Pnt '), p);
+    var ps = new ActionDescriptor();
+    ps.putEnumerated(c('Algn'), c('Alg '), h == 0 ? c('Left') : h == 1 ? c('Cntr') : c('Rght'));
+    var pr = new ActionDescriptor();
+    pr.putInteger(c('From'), 0); pr.putInteger(c('T   '), txt.length + 1);
+    pr.putObject(s('paragraphStyle'), s('paragraphStyle'), ps);
+    var pl = new ActionList(); pl.putObject(s('paragraphStyleRange'), pr);
+    t.putList(s('paragraphStyleRange'), pl);
     var sty = new ActionDescriptor();
     sty.putUnitDouble(c('Sz  '), c('#Pnt'), pt);
     var rng = new ActionDescriptor();
@@ -314,6 +344,22 @@ function makeTextLayer(doc, set, ab, txt, pt) {
     }
     if (lyr.parent != set) { try { lyr.move(set, ElementPlacement.PLACEATBEGINNING); } catch (e) { } }
     return lyr;
+}
+// Dời layer bằng Action Manager (như kéo bằng Move tool)
+function moveLayerBy(lyr, dx, dy) {
+    try {
+        selectById(lyr.id);
+        var d = new ActionDescriptor(), r = new ActionReference();
+        r.putEnumerated(c('Lyr '), c('Ordn'), c('Trgt'));
+        d.putReference(c('null'), r);
+        var o = new ActionDescriptor();
+        o.putUnitDouble(c('Hrzn'), c('#Pxl'), dx);
+        o.putUnitDouble(c('Vrtc'), c('#Pxl'), dy);
+        d.putObject(c('T   '), c('Ofst'), o);
+        executeAction(c('move'), d, DialogModes.NO);
+    } catch (e) {
+        lyr.translate(new UnitValue(dx, 'px'), new UnitValue(dy, 'px'));
+    }
 }
 // Khung chữ (không tính hiệu ứng), đọc mới từ Photoshop
 function measureLayer(lyr) {
@@ -605,6 +651,7 @@ function showDialog(st, arts, fromActive) {
         if (!all) {
             savePrevN(n);
             status.text = out.pages.length ? 'Đang xem thử trang thứ ' + out.pages.join(', ') + ' (gần bìa). Ưng thì bấm "Cập nhật tất cả", chưa ưng thì sửa rồi bấm Xem trước lại.' : 'Không có trang nào được gắn số với thiết lập này.';
+            if (out.warns.length) alert(out.warns.join('\n'));
         }
         o.__warns = out.warns; o.__out = out;
         return o;

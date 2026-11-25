@@ -29,9 +29,9 @@
     {
       "path": "SoTrangTuDong.jsx",
       "name": "Số trang tự động",
-      "version": "1.2.0",
+      "version": "1.2.1",
       "date": "2026-11-25",
-      "notes": "Sửa lỗi trang bên trái số bị lệch ra giữa, giờ nằm đúng góc trái như sách; bấm \"Cập nhật tất cả\" có khung tiến độ và nút \"Dừng\" (hoặc Esc), dừng là trả file về y như cũ."
+      "notes": "Sửa tiếp lỗi số ở trang trái nằm giữa: số được tạo sẵn ở đúng góc và canh lề ngay từ đầu, dời bằng cách khác rồi tự kiểm tra lại; nếu còn lệch tool báo và ghi nhật ký SoTrang_nhatky.txt ra Desktop để gửi lại."
     },
     {
       "path": "XoayIsometric.jsx",
@@ -49,6 +49,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "SoTrangTuDong.jsx v1.2.1: sửa tiếp lỗi số ở trang trái nằm giữa: số được tạo sẵn ở đúng góc và canh lề ngay từ đầu, dời bằng cách khác rồi tự kiểm tra lại; nếu còn lệch tool báo và ghi nhật ký SoTrang_nhatky.txt ra Desktop để gửi lại."
+    },
     {
       "date": "2026-11-25",
       "text": "DanhSoArtboard.jsx v1.1.0: có khung tiến độ và nút \"Dừng\" (hoặc Esc) khi đang đánh số; dừng là trả file về y như cũ."
@@ -84,10 +88,6 @@
     {
       "date": "2026-11-25",
       "text": "CheDoNhe.jsx v1.0.0: tool mới \"Chế độ nhẹ\" giúp bớt lag: tạm thay ảnh Smart Object bằng bản nhẹ theo % bạn chọn (thanh trượt), kích thước và vị trí giữ nguyên, ảnh gốc được cất ở thư mục cạnh file; xem RAM Photoshop đang dùng và RAM dự kiến sau khi làm nhẹ; giữ nét artboard đang chọn, nút \"Làm nét artboard đang chọn\" để đổi sang trang khác; \"Trả về đầy đủ tất cả\" để lấy lại ảnh gốc."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "XuatArtboardNen.jsx v1.5.0: báo trước nếu file đang ở chế độ nhẹ (ảnh mờ), để bạn trả về đầy đủ rồi mới xuất."
     }
   ]
 }
