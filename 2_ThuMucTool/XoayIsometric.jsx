@@ -3,11 +3,12 @@
   @name: Xoay ảnh Isometric
   @group: Hình chiếu trục đo
   @desc: Biến ảnh phẳng thành mặt trên / mặt trái / mặt phải theo góc isometric, dimetric, 45°, 30/60, cavalier… (giữ Smart Object) và dựng khối hộp từ 3 ảnh.
-  @version: 1.0.0
+  @version: 1.1.0
   @date: 2026-11-25
 
   XoayIsometric.jsx
-  - Chọn 1 hoặc nhiều layer ảnh, chọn kiểu hình chiếu, bấm 1 nút: Mặt trên (sàn/mái), Mặt trái, Mặt phải.
+  - Thẻ "Xoay 1 ảnh": chọn ảnh, chọn kiểu hình chiếu và mặt (trên / trái / phải). Có xem trước trực tiếp
+    trên ảnh; "Xong" để giữ, "Hủy" để trả lại như cũ.
   - Layer được đổi thành Smart Object rồi mới biến dạng, nên nhấp đúp vẫn sửa/thay ảnh được.
     Bấm lại nút khác trên cùng layer: tool đặt lại biến dạng cũ rồi áp góc mới (không bị chồng méo).
   - "Dựng khối hộp": chọn 3 ảnh cho 3 mặt, nhập kích thước, tool tự cắt (mask) cho khít cạnh và gom vào 1 group.
@@ -15,7 +16,7 @@
   Dùng cho Photoshop 2021/2022 trở lên. CHƯA thử trên Photoshop thật.
 */
 
-var TOOL_VERSION = '1.0.0';
+var TOOL_VERSION = '1.1.0';
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
 
@@ -244,56 +245,85 @@ function quadsMatch(a, b) {
 }
 
 // ---------------------------------------------------------------------------
+// Vị trí: luôn dùng khung bao (bounds) tính bằng px của Photoshop, vì 4 góc đọc từ Smart Object
+// có thể khác đơn vị. 4 góc chỉ được dùng khi khớp với khung bao.
+// ---------------------------------------------------------------------------
+function boundsBox(id) { return bboxOf(boundsOf(id)); }
+// Hệ số đổi đơn vị 4 góc -> px, tự dò khi layer đang ở trạng thái chưa biến dạng
+var QCAL = null;
+function calibrateQuad(id) {
+    QCAL = null;
+    var q = readQuad(id); if (!q) return;
+    var qb = bboxOf(q), bb = boundsBox(id);
+    if (qb.w < 1 || qb.h < 1) return;
+    if (qb.l <= bb.l + 2 && qb.t <= bb.t + 2 && qb.r >= bb.r - 2 && qb.b >= bb.b - 2) { QCAL = { k: 1, ox: 0, oy: 0 }; return; }
+    var kx = bb.w / qb.w, ky = bb.h / qb.h;
+    if (Math.abs(kx - ky) / kx < 0.02) QCAL = { k: kx, ox: bb.l - qb.l * kx, oy: bb.t - qb.t * kx };
+}
+function validQuad(id, raw) {
+    var q = raw || readQuad(id); if (!q || !QCAL) return null;
+    var out = [];
+    for (var i = 0; i < 4; i++) out.push([q[i][0] * QCAL.k + QCAL.ox, q[i][1] * QCAL.k + QCAL.oy]);
+    return out;
+}
+function moveCenterTo(id, cx, cy) {
+    var b = boundsBox(id);
+    moveActiveLayer(cx - b.cx, cy - b.cy);
+}
+
+// ---------------------------------------------------------------------------
 // Áp ma trận lên 1 layer. scaleMode: 'keep' (giữ tỉ lệ hiện tại) hoặc {w,h} (lấp đầy mặt kích thước w x h)
-// target: [x,y] tâm đích (null = giữ tâm cũ). Trả về chuỗi cảnh báo ('' nếu ổn).
+// target: [x,y] tâm đích (null = giữ tâm cũ). Trả về { id, warn }.
 // ---------------------------------------------------------------------------
 function applyFace(id, P, scaleMode, target) {
     selectLayerByID(id);
     var doc = app.activeDocument, warn = '';
-    var lay = doc.activeLayer;
-    if (lay.isBackgroundLayer) { lay.isBackgroundLayer = false; id = activeLayerID(); }
+    if (doc.activeLayer.isBackgroundLayer) { doc.activeLayer.isBackgroundLayer = false; id = activeLayerID(); }
 
     var wasSO = isSmartObject(id);
-    var before = quadOrBounds(id);
-    var center = target || centerOf(before);
+    var bBefore = boundsBox(id), qRawBefore = wasSO ? readQuad(id) : null;
+    var center = target || [bBefore.cx, bBefore.cy];
     var reset = false;
     if (!wasSO) { convertToSmartObject(); id = activeLayerID(); }
     else {
         reset = resetTransform();
-        if (!reset) {
-            // Không đặt lại được: nếu layer đang bị xiên/xoay thì bọc thêm 1 lớp Smart Object
-            var qb = readQuad(id);
-            if (qb && Math.abs(qb[0][1] - qb[1][1]) > 0.5) {
-                convertToSmartObject(); id = activeLayerID();
-                warn = 'Không đặt lại được biến dạng cũ, tool đã bọc thêm 1 lớp Smart Object (góc mới chồng lên góc cũ).';
-            }
+        if (!reset && qRawBefore && Math.abs(qRawBefore[0][1] - qRawBefore[1][1]) > 0.01) {
+            convertToSmartObject(); id = activeLayerID();
+            warn = 'Không đặt lại được biến dạng cũ, tool đã bọc thêm 1 lớp Smart Object.';
         }
     }
-    var rect = quadOrBounds(id), rb = bboxOf(rect);
+    calibrateQuad(id);
+    var qBefore = qRawBefore ? validQuad(id, qRawBefore) : null;
+    var q0 = validQuad(id), rect = q0 || boundsOf(id), rb = bboxOf(rect);
     var W = rb.w, H = rb.h;
     if (W < 1 || H < 1) throw new Error('Layer trống, không có điểm ảnh nào.');
 
     var sc = 1;
     if (scaleMode == 'keep') {
         if (wasSO && reset) {
-            if (before.length == 4 && readQuad(id)) {
-                sc = Math.max(len([before[1][0] - before[0][0], before[1][1] - before[0][1]]) / W,
-                              len([before[3][0] - before[0][0], before[3][1] - before[0][1]]) / H);
+            if (qBefore && q0) {
+                sc = Math.max(len([qBefore[1][0] - qBefore[0][0], qBefore[1][1] - qBefore[0][1]]) / W,
+                              len([qBefore[3][0] - qBefore[0][0], qBefore[3][1] - qBefore[0][1]]) / H);
             } else {
-                var bb = bboxOf(before); sc = Math.max(bb.w / W, bb.h / H);
+                var bn = boundsBox(id); sc = Math.max(bBefore.w / bn.w, bBefore.h / bn.h);
             }
             if (!(sc > 0.001) || sc > 100) sc = 1;
         }
     } else {
-        sc = Math.max(scaleMode.w / W, scaleMode.h / H);
+        // lấp đầy theo phần có điểm ảnh
+        var bc = boundsBox(id);
+        sc = Math.max(scaleMode.w / bc.w, scaleMode.h / bc.h);
     }
     var M = [P[0] * sc, P[1] * sc, P[2] * sc, P[3] * sc];
 
-    // Tứ giác đích
+    // Tứ giác đích (đặt tạm quanh tâm khung chữ nhật hiện tại; vị trí sẽ chỉnh lại sau bằng bounds)
     var hw = W / 2, hh = H / 2, loc = [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]], quad = [];
-    for (var i = 0; i < 4; i++) { var v = app2(M, loc[i][0], loc[i][1]); quad.push([center[0] + v[0], center[1] + v[1]]); }
+    for (var i = 0; i < 4; i++) { var v = app2(M, loc[i][0], loc[i][1]); quad.push([rb.cx + v[0], rb.cy + v[1]]); }
+    // Khung bao mong đợi của phần có điểm ảnh
+    var bc0 = boundsBox(id), pts = [[bc0.l, bc0.t], [bc0.r, bc0.t], [bc0.r, bc0.b], [bc0.l, bc0.b]], expPts = [];
+    for (var e = 0; e < 4; e++) { var w2 = app2(M, pts[e][0] - rb.cx, pts[e][1] - rb.cy); expPts.push(w2); }
+    var expB = bboxOf(expPts);
 
-    var canCheck = !!readQuad(id);
     var methods = [
         function () { transformToQuad(rect, quad); },
         function () { transformByDecomposition(M, 1, 1); },
@@ -302,25 +332,34 @@ function applyFace(id, P, scaleMode, target) {
         function () { transformByDecomposition(M, -1, -1); }
     ];
     var start = 0;
-    try { var saved = app.getCustomOptions('XoayIsometric_method'); start = saved.getInteger(s('m')); } catch (e) { start = 0; }
+    try { start = app.getCustomOptions('XoayIsometric_method2').getInteger(s('m')); } catch (e1) { start = 0; }
+    if (start < 0 || start >= methods.length) start = 0;
     var order = [start]; for (var m = 0; m < methods.length; m++) if (m != start) order.push(m);
 
-    var done = false, lastErr = '', applied = false;
+    function check() {
+        var q = validQuad(id);
+        if (q) {
+            // so hình dạng (bỏ qua vị trí)
+            var cq = centerOf(q), cE = centerOf(quad), a = [], b = [];
+            for (var k = 0; k < 4; k++) { a.push([q[k][0] - cq[0], q[k][1] - cq[1]]); b.push([quad[k][0] - cE[0], quad[k][1] - cE[1]]); }
+            return quadsMatch(b, a);
+        }
+        var nb = boundsBox(id);
+        return Math.abs(nb.w - expB.w) <= Math.max(3, expB.w * 0.03) && Math.abs(nb.h - expB.h) <= Math.max(3, expB.h * 0.03);
+    }
+
+    var done = false, lastErr = '', applied = -1, firstOk = -1;
     for (var t = 0; t < order.length && !done; t++) {
-        if (applied) { if (!resetTransform()) break; applied = false; }
-        try { methods[order[t]](); applied = true; } catch (e) { lastErr = e.message; continue; }
-        // Đưa về đúng tâm
-        var now = quadOrBounds(id), cn = centerOf(now);
-        moveActiveLayer(center[0] - cn[0], center[1] - cn[1]);
-        if (!canCheck) { done = true; break; }
-        if (quadsMatch(readQuad(id), quad)) {
+        if (applied >= 0) { if (!resetTransform()) break; applied = -1; }
+        try { methods[order[t]](); applied = order[t]; if (firstOk < 0) firstOk = order[t]; } catch (e2) { lastErr = e2.message; continue; }
+        if (check()) {
             done = true;
-            if (order[t] != start) {
-                try { var od = new ActionDescriptor(); od.putInteger(s('m'), order[t]); app.putCustomOptions('XoayIsometric_method', od, true); } catch (e2) { }
-            }
+            if (order[t] != start) { try { var od = new ActionDescriptor(); od.putInteger(s('m'), order[t]); app.putCustomOptions('XoayIsometric_method2', od, true); } catch (e3) { } }
         }
     }
-    if (!done) warn += (warn ? '\n' : '') + 'Kết quả có thể chưa đúng góc' + (lastErr ? ' (' + lastErr + ')' : '') + '. Bạn chụp màn hình gửi lại giúp mình nhé.';
+    if (!done && applied != firstOk && firstOk >= 0 && resetTransform()) { try { methods[firstOk](); } catch (e4) { } }
+    moveCenterTo(id, center[0], center[1]);
+    if (!done) warn += (warn ? '\n' : '') + 'Có thể chưa đúng góc' + (lastErr ? ' (' + lastErr + ')' : '') + '. Bạn chụp màn hình gửi lại giúp mình nhé.';
     return { id: id, warn: warn };
 }
 
@@ -331,6 +370,13 @@ function maskToQuad(q) {
         var dx = q[i][0] - cxy[0], dy = q[i][1] - cxy[1], L = len([dx, dy]) || 1;
         pts.push([q[i][0] + dx / L * 0.5, q[i][1] + dy / L * 0.5]);
     }
+    // Xoá mask cũ (nếu có) rồi tạo mask mới
+    try {
+        if (!layerDesc(activeLayerID()).hasKey(s('userMaskEnabled'))) throw 0;
+        var dd = new ActionDescriptor(), rr = new ActionReference();
+        rr.putEnumerated(c('Chnl'), c('Chnl'), c('Msk ')); dd.putReference(c('null'), rr);
+        executeAction(c('Dlt '), dd, DialogModes.NO);
+    } catch (e0) { }
     doc.selection.select(pts, SelectionType.REPLACE, 0, true);
     try {
         var d = new ActionDescriptor(); d.putClass(c('Nw  '), c('Chnl'));
@@ -341,81 +387,79 @@ function maskToQuad(q) {
     doc.selection.deselect();
 }
 
+// Gom các layer (theo ID) vào 1 group ngay tại chỗ (giữ trong artboard/group cũ), như Ctrl+G
+function groupLayers(ids, name) {
+    for (var i = 0; i < ids.length; i++) selectLayerByID(ids[i], i > 0);
+    var d = new ActionDescriptor();
+    var r = new ActionReference(); r.putClass(s('layerSection')); d.putReference(c('null'), r);
+    var r2 = new ActionReference(); r2.putEnumerated(c('Lyr '), c('Ordn'), c('Trgt')); d.putReference(c('From'), r2);
+    var d2 = new ActionDescriptor(); d2.putString(c('Nm  '), name); d.putObject(c('Usng'), s('layerSection'), d2);
+    executeAction(c('Mk  '), d, DialogModes.NO);
+}
+
 // ---------------------------------------------------------------------------
 // Hai chức năng chính
 // ---------------------------------------------------------------------------
-function runFaces(opt) {
+function runFace(opt) {
     var p = PRESETS[opt.preset], P = mul(faceMatrix(p, opt.face), rotLocal(opt.rot));
-    var ids = selectedLayerIDs(), warns = [], newIds = [];
-    for (var i = 0; i < ids.length; i++) {
-        var id = ids[i];
-        if (opt.keep) {
-            selectLayerByID(id);
-            var orig = app.activeDocument.activeLayer;
-            var dup = orig.duplicate(orig, ElementPlacement.PLACEBEFORE);
-            orig.visible = false;
-            app.activeDocument.activeLayer = dup;
-            id = activeLayerID();
-        }
-        var r = applyFace(id, P, 'keep', null);
-        newIds.push(r.id);
-        if (r.warn) warns.push(r.warn);
+    var id = opt.layer;
+    if (opt.keep) {
+        selectLayerByID(id);
+        var orig = app.activeDocument.activeLayer;
+        var dup = orig.duplicate(orig, ElementPlacement.PLACEBEFORE);
+        orig.visible = false;
+        app.activeDocument.activeLayer = dup;
+        id = activeLayerID();
     }
-    for (var j = 0; j < newIds.length; j++) selectLayerByID(newIds[j], j > 0);
-    return warns;
+    var r = applyFace(id, P, 'keep', null);
+    selectLayerByID(r.id);
+    return r.warn ? [r.warn] : [];
 }
 
 function runCube(opt) {
     var p = PRESETS[opt.preset], A = axes(p), a = opt.a, b = opt.b, h = opt.h;
-    var doc = app.activeDocument;
-    // Đỉnh trước-dưới F = (0,0); các điểm còn lại
     function add() { var x = 0, y = 0; for (var i = 0; i < arguments.length; i++) { x += arguments[i][0]; y += arguments[i][1]; } return [x, y]; }
     function sc(v, k) { return [v[0] * k, v[1] * k]; }
     var F = [0, 0], La = sc(A.L, b), Ra = sc(A.R, a), Za = sc(A.Z, h);
-    var Zt = Za;
     var faces = {
-        top: { q: [add(Zt, La, Ra), add(Zt, Ra), Zt, add(Zt, La)], w: b, hh: a },
+        top: { q: [add(Za, La, Ra), add(Za, Ra), Za, add(Za, La)], w: b, hh: a },
         left: { q: [add(La, Za), Za, F, La], w: b, hh: h },
         right: { q: [Za, add(Ra, Za), Ra, F], w: a, hh: h }
     };
-    // Canh giữa khối trong tài liệu
+    // Đặt khối ngay giữa vùng 3 ảnh gốc đang nằm
+    var src = [];
+    var keys = ['top', 'left', 'right'];
+    for (var s0 = 0; s0 < 3; s0++) { var bb0 = boundsBox(opt.layers[keys[s0]]); src.push([bb0.l, bb0.t], [bb0.r, bb0.b]); }
+    var sb = bboxOf(src);
     var all = [];
-    for (var k in faces) for (var i = 0; i < 4; i++) all.push(faces[k].q[i]);
-    var bb = bboxOf(all), off = [doc.width.as('px') / 2 - bb.cx, doc.height.as('px') / 2 - bb.cy];
-    for (var k2 in faces) for (var j = 0; j < 4; j++) faces[k2].q[j] = add(faces[k2].q[j], off);
+    for (var k = 0; k < 3; k++) for (var i = 0; i < 4; i++) all.push(faces[keys[k]].q[i]);
+    var bb = bboxOf(all), off = [sb.cx - bb.cx, sb.cy - bb.cy];
+    for (var k2 = 0; k2 < 3; k2++) for (var j = 0; j < 4; j++) faces[keys[k2]].q[j] = add(faces[keys[k2]].q[j], off);
 
-    var warns = [], ids = {};
-    var orderF = ['right', 'left', 'top'];
+    var warns = [], ids = [];
+    var orderF = ['top', 'left', 'right'];
     for (var n = 0; n < orderF.length; n++) {
-        var f = orderF[n], fc = faces[f], lid = opt.layers[f];
-        var P = faceMatrix(p, f);
-        // Ma trận đơn vị không có độ dài trục -> kích thước "lấp đầy" tính trong toạ độ ảnh
-        var r = applyFace(lid, P, { w: fc.w, h: fc.hh }, centerOf(fc.q));
+        var f = orderF[n], fc = faces[f];
+        var r = applyFace(opt.layers[f], faceMatrix(p, f), { w: fc.w, h: fc.hh }, centerOf(fc.q));
         if (r.warn) warns.push(FACE_LABEL[f] + ': ' + r.warn);
         maskToQuad(fc.q);
-        ids[f] = r.id;
+        ids.push(r.id);
     }
-    // Gom vào 1 group
-    selectLayerByID(ids.top);
-    var set = doc.layerSets.add();
-    set.name = 'Khối hộp - ' + p.name;
-    for (var m = 0; m < orderF.length; m++) {
-        selectLayerByID(ids[orderF[m]]);
-        doc.activeLayer.move(set, ElementPlacement.INSIDE);
-    }
-    doc.activeLayer = set;
+    try { groupLayers(ids, 'Khối hộp - ' + p.name); } catch (e) { warns.push('Không gom được group: ' + e.message); }
     return warns;
 }
 
 // ---------------------------------------------------------------------------
-// Hộp thoại
+// Hộp thoại (có xem trước trực tiếp trên ảnh)
 // ---------------------------------------------------------------------------
 function loadPrefs() {
-    var o = { preset: 0, rot: 0, keep: false, a: 0, b: 0, h: 0 };
+    var o = { preset: 0, rot: 0, keep: false, a: 0, b: 0, h: 0, live: true, face: 'left' };
     try {
         var d = app.getCustomOptions('XoayIsometric_prefs');
         o.preset = d.getInteger(s('preset')); o.rot = d.getInteger(s('rot')); o.keep = d.getBoolean(s('keep'));
         o.a = d.getInteger(s('a')); o.b = d.getInteger(s('b')); o.h = d.getInteger(s('h'));
+        if (d.hasKey(s('live'))) o.live = d.getBoolean(s('live'));
+        if (d.hasKey(s('face'))) o.face = d.getString(s('face'));
     } catch (e) { }
     if (o.preset < 0 || o.preset >= PRESETS.length) o.preset = 0;
     return o;
@@ -425,132 +469,209 @@ function savePrefs(o) {
         var d = new ActionDescriptor();
         d.putInteger(s('preset'), o.preset); d.putInteger(s('rot'), o.rot); d.putBoolean(s('keep'), o.keep);
         d.putInteger(s('a'), o.a); d.putInteger(s('b'), o.b); d.putInteger(s('h'), o.h);
+        d.putBoolean(s('live'), o.live); d.putString(s('face'), o.face || 'left');
         app.putCustomOptions('XoayIsometric_prefs', d, true);
     } catch (e) { }
 }
 
+// Chạy 1 thao tác thành 1 bước History. Trả về { warns, err }
+function runOp(opt) {
+    var out = { warns: [], err: '' };
+    $.global.__XI_OPT = opt; $.global.__XI_OUT = out;
+    var title = opt.mode == 'cube' ? 'Dựng khối hộp' : 'Xoay ' + FACE_LABEL[opt.face];
+    try { app.activeDocument.suspendHistory(title, '__XI_run()'); }
+    catch (e) { if (!out.err) out.err = e.message; }
+    return out;
+}
+function __XI_run() {
+    var o = $.global.__XI_OPT, out = $.global.__XI_OUT;
+    try { out.warns = (o.mode == 'cube') ? runCube(o) : runFace(o); }
+    catch (e) { out.err = e.message + (e.line ? ' (dòng ' + e.line + ')' : ''); }
+}
+
 function showDialog(prefs, layers, selIds) {
-    var res = null;
+    var doc = app.activeDocument;
+    var startState = doc.activeHistoryState;
+    var previewed = false, lastKey = '';
+
     var w = new Window('dialog', 'Xoay ảnh Isometric  v' + TOOL_VERSION);
     w.orientation = 'column'; w.alignChildren = 'fill';
 
-    var p1 = w.add('panel', undefined, '1. Kiểu hình chiếu');
-    p1.alignChildren = 'fill';
+    // --- Kiểu góc + hình minh hoạ
+    var p1 = w.add('panel', undefined, 'Kiểu hình chiếu');
     var g1 = p1.add('group'); g1.orientation = 'row'; g1.alignChildren = 'top';
-    var left = g1.add('group'); left.orientation = 'column'; left.alignChildren = 'fill';
-    var names = []; for (var i = 0; i < PRESETS.length; i++) names.push(PRESETS[i].name);
-    var dd = left.add('dropdownlist', undefined, names); dd.selection = prefs.preset; dd.preferredSize.width = 290;
-    var note = left.add('statictext', undefined, '', { multiline: true }); note.preferredSize = [290, 48];
-    var pv = g1.add('panel'); pv.preferredSize = [170, 140];
+    var gl = g1.add('group'); gl.orientation = 'column'; gl.alignChildren = 'fill';
+    var names = []; for (var i = 0; i < PRESETS.length; i++) names.push((i + 1) + '. ' + PRESETS[i].name);
+    var dd = gl.add('dropdownlist', undefined, names); dd.selection = prefs.preset; dd.preferredSize.width = 300;
+    var note = gl.add('statictext', undefined, '', { multiline: true }); note.preferredSize = [300, 50];
+    var pv = g1.add('panel'); pv.preferredSize = [160, 140];
 
-    var p2 = w.add('panel', undefined, '2. Xoay layer đang chọn (bấm 1 lần)');
-    p2.alignChildren = 'fill';
-    var gb = p2.add('group'); gb.alignment = 'center';
-    var bTop = gb.add('button', undefined, 'Mặt trên (sàn / mái)');
-    var bLeft = gb.add('button', undefined, 'Mặt trái');
-    var bRight = gb.add('button', undefined, 'Mặt phải');
-    var g2 = p2.add('group');
-    g2.add('statictext', undefined, 'Xoay ảnh trong mặt:');
-    var ddRot = g2.add('dropdownlist', undefined, ['0°', '90°', '180°', '270°']); ddRot.selection = Math.round(prefs.rot / 90) % 4;
-    var cbKeep = g2.add('checkbox', undefined, 'Giữ bản gốc (nhân bản rồi ẩn bản gốc)'); cbKeep.value = prefs.keep;
-    p2.add('statictext', undefined, 'Chọn được nhiều layer cùng lúc. Bấm lại nút khác để đổi góc, không bị méo chồng.');
+    // --- 2 thẻ
+    var tabs = w.add('tabbedpanel');
+    var t1 = tabs.add('tab', undefined, 'Xoay 1 ảnh');
+    var t2 = tabs.add('tab', undefined, 'Dựng khối hộp từ 3 ảnh');
+    t1.alignChildren = 'left'; t2.alignChildren = 'left';
 
-    var p3 = w.add('panel', undefined, '3. Dựng khối hộp từ 3 ảnh');
-    p3.alignChildren = 'left';
     var lnames = []; for (var j = 0; j < layers.length; j++) lnames.push(layers[j].name);
-    function pick(label, def) {
-        var g = p3.add('group'); var t = g.add('statictext', undefined, label); t.preferredSize.width = 70;
-        var d = g.add('dropdownlist', undefined, lnames); d.preferredSize.width = 330;
+    function layerPicker(parent, label, def) {
+        var g = parent.add('group'); var t = g.add('statictext', undefined, label); t.preferredSize.width = 75;
+        var d = g.add('dropdownlist', undefined, lnames); d.preferredSize.width = 340;
         for (var k = 0; k < layers.length; k++) if (layers[k].id == def) { d.selection = k; break; }
         if (!d.selection && layers.length) d.selection = 0;
         return d;
     }
-    var ddT = pick('Mặt trên:', selIds[0]), ddL = pick('Mặt trái:', selIds[1]), ddR = pick('Mặt phải:', selIds[2]);
-    var gs = p3.add('group');
+
+    // Thẻ 1: xoay 1 ảnh
+    var ddOne = layerPicker(t1, 'Ảnh cần xoay:', selIds[0]);
+    var gf = t1.add('group'); gf.add('statictext', undefined, 'Đặt thành:');
+    var rTop = gf.add('radiobutton', undefined, 'Mặt trên (sàn / mái)');
+    var rLeft = gf.add('radiobutton', undefined, 'Mặt trái');
+    var rRight = gf.add('radiobutton', undefined, 'Mặt phải');
+    (prefs.face == 'top' ? rTop : prefs.face == 'right' ? rRight : rLeft).value = true;
+    var g2 = t1.add('group');
+    g2.add('statictext', undefined, 'Xoay ảnh trong mặt:');
+    var ddRot = g2.add('dropdownlist', undefined, ['0°', '90°', '180°', '270°']); ddRot.selection = Math.round(prefs.rot / 90) % 4;
+    var cbKeep = g2.add('checkbox', undefined, 'Giữ bản gốc (nhân bản rồi ẩn bản gốc)'); cbKeep.value = prefs.keep;
+    t1.add('statictext', undefined, 'Chỉ ảnh đã chọn ở trên bị xoay, các layer khác giữ nguyên.');
+
+    // Thẻ 2: khối hộp
+    var ddT = layerPicker(t2, 'Mặt trên:', selIds[0]);
+    var ddL = layerPicker(t2, 'Mặt trái:', selIds[1] || selIds[0]);
+    var ddR = layerPicker(t2, 'Mặt phải:', selIds[2] || selIds[0]);
+    var gs = t2.add('group');
     function num(label, v) { gs.add('statictext', undefined, label); var e = gs.add('edittext', undefined, String(v)); e.characters = 6; return e; }
     var eA = num('Dài (trục phải):', prefs.a), eB = num('Rộng (trục trái):', prefs.b), eH = num('Cao:', prefs.h);
     gs.add('statictext', undefined, 'px');
-    var bCube = p3.add('button', undefined, 'Dựng khối hộp'); bCube.alignment = 'center';
-    p3.add('statictext', undefined, 'Mẹo: chọn sẵn 3 layer (trên cùng = mặt trên, giữa = trái, dưới = phải) rồi mở tool.');
+    t2.add('statictext', undefined, 'Khối được dựng ngay chỗ 3 ảnh đang nằm, rồi gom vào 1 group tại chỗ.');
+    t2.add('statictext', undefined, 'Mẹo: chọn sẵn 3 layer (trên cùng = mặt trên, giữa = trái, dưới = phải) rồi mở tool.');
 
+    tabs.selection = (prefs.tab == 1) ? t2 : t1;
+
+    // --- Xem trước + nút
+    var gp = w.add('group'); gp.alignment = 'fill';
+    var cbLive = gp.add('checkbox', undefined, 'Xem trước trực tiếp trên ảnh'); cbLive.value = prefs.live;
+    var bPrev = gp.add('button', undefined, 'Xem trước');
+    var status = w.add('statictext', undefined, ' ', { multiline: true }); status.preferredSize = [460, 34];
     var gEnd = w.add('group'); gEnd.alignment = 'right';
-    gEnd.add('button', undefined, 'Đóng', { name: 'cancel' });
+    var bOK = gEnd.add('button', undefined, 'Xong', { name: 'ok' });
+    var bCancel = gEnd.add('button', undefined, 'Hủy', { name: 'cancel' });
 
-    function face() { return dd.selection ? dd.selection.index : 0; }
-    function refresh() { note.text = PRESETS[face()].note; try { pv.hide(); pv.show(); } catch (e) { } }
+    function presetIdx() { return dd.selection ? dd.selection.index : 0; }
+    function curFace() { return rTop.value ? 'top' : rRight.value ? 'right' : 'left'; }
+    function isCube() { return tabs.selection == t2; }
+    function collect() {
+        var o = { preset: presetIdx(), rot: (ddRot.selection ? ddRot.selection.index : 0) * 90, keep: cbKeep.value,
+                  a: parseInt(eA.text, 10) || 0, b: parseInt(eB.text, 10) || 0, h: parseInt(eH.text, 10) || 0,
+                  live: cbLive.value, face: curFace(), tab: isCube() ? 1 : 0 };
+        if (isCube()) {
+            o.mode = 'cube';
+            if (o.a < 1 || o.b < 1 || o.h < 1) return { bad: 'Nhập kích thước khối (số px lớn hơn 0).' };
+            if (!ddT.selection || !ddL.selection || !ddR.selection) return { bad: 'Chọn đủ 3 layer cho 3 mặt.' };
+            o.layers = { top: layers[ddT.selection.index].id, left: layers[ddL.selection.index].id, right: layers[ddR.selection.index].id };
+            if (o.layers.top == o.layers.left || o.layers.top == o.layers.right || o.layers.left == o.layers.right)
+                return { bad: '3 mặt phải là 3 layer khác nhau.' };
+        } else {
+            o.mode = 'face';
+            if (!ddOne.selection) return { bad: 'Chọn ảnh cần xoay.' };
+            o.layer = layers[ddOne.selection.index].id;
+        }
+        return o;
+    }
+    function keyOf(o) { return [o.mode, o.preset, o.rot, o.keep, o.a, o.b, o.h, o.face, o.layer, o.layers ? o.layers.top + '-' + o.layers.left + '-' + o.layers.right : ''].join('|'); }
+    function revert() {
+        if (!previewed) return;
+        try { doc.activeHistoryState = startState; } catch (e) { }
+        previewed = false; lastKey = '';
+    }
+    function preview(force) {
+        var o = collect();
+        if (o.bad) { status.text = o.bad; return null; }
+        var k = keyOf(o);
+        if (!force && previewed && k == lastKey) return o;
+        revert();
+        status.text = 'Đang xoay…';
+        var out = runOp(o);
+        previewed = true; lastKey = k;
+        try { app.refresh(); } catch (e) { }
+        status.text = out.err ? 'Lỗi: ' + out.err : (out.warns.length ? out.warns.join(' ') : 'Đang xem trước. Bấm "Xong" để giữ, "Hủy" để trả lại như cũ.');
+        o.out = out;
+        return o;
+    }
+    function changed() { refreshDrawing(); if (cbLive.value) preview(false); }
+
+    function refreshDrawing() { note.text = PRESETS[presetIdx()].note; try { pv.hide(); pv.show(); } catch (e) { } }
     pv.onDraw = function () {
         try {
-            var g = this.graphics, A = axes(PRESETS[face()]), sz = 45;
+            var g = this.graphics, A = axes(PRESETS[presetIdx()]), sz = 45;
             var F = [0, 0], La = [A.L[0] * sz, A.L[1] * sz], Ra = [A.R[0] * sz, A.R[1] * sz], Za = [A.Z[0] * sz, A.Z[1] * sz];
             var P = function (a, b) { return [a[0] + b[0], a[1] + b[1]]; };
+            var hl = isCube() ? '' : curFace();
             var polys = [
-                [[P(Za, P(La, Ra)), P(Za, Ra), Za, P(Za, La)], [0.85, 0.85, 0.85]],
-                [[P(La, Za), Za, F, La], [0.55, 0.55, 0.55]],
-                [[Za, P(Ra, Za), Ra, F], [0.35, 0.35, 0.35]]
+                ['top', [P(Za, P(La, Ra)), P(Za, Ra), Za, P(Za, La)], [0.85, 0.85, 0.85]],
+                ['left', [P(La, Za), Za, F, La], [0.55, 0.55, 0.55]],
+                ['right', [Za, P(Ra, Za), Ra, F], [0.35, 0.35, 0.35]]
             ];
-            var all = []; for (var i = 0; i < polys.length; i++) all = all.concat(polys[i][0]);
+            var all = []; for (var i = 0; i < polys.length; i++) all = all.concat(polys[i][1]);
             var bb = bboxOf(all), ox = this.size[0] / 2 - bb.cx, oy = this.size[1] / 2 - bb.cy;
             for (var k = 0; k < polys.length; k++) {
-                var q = polys[k][0]; g.newPath(); g.moveTo(q[0][0] + ox, q[0][1] + oy);
+                var q = polys[k][1]; g.newPath(); g.moveTo(q[0][0] + ox, q[0][1] + oy);
                 for (var m = 1; m < 4; m++) g.lineTo(q[m][0] + ox, q[m][1] + oy);
                 g.closePath();
-                var col = polys[k][1];
+                var col = polys[k][0] == hl ? [0.95, 0.55, 0.15] : polys[k][2];
                 g.fillPath(g.newBrush(g.BrushType.SOLID_COLOR, [col[0], col[1], col[2], 1]));
                 g.strokePath(g.newPen(g.PenType.SOLID_COLOR, [0.1, 0.1, 0.1, 1], 1));
             }
         } catch (e) { }
     };
-    dd.onChange = refresh;
-    refresh();
 
-    function common() {
-        return { preset: face(), rot: (ddRot.selection ? ddRot.selection.index : 0) * 90, keep: cbKeep.value,
-                 a: parseInt(eA.text, 10) || 0, b: parseInt(eB.text, 10) || 0, h: parseInt(eH.text, 10) || 0 };
-    }
-    function go(f) { res = common(); res.mode = 'face'; res.face = f; w.close(1); }
-    bTop.onClick = function () { go('top'); };
-    bLeft.onClick = function () { go('left'); };
-    bRight.onClick = function () { go('right'); };
-    bCube.onClick = function () {
-        var o = common();
-        if (o.a < 1 || o.b < 1 || o.h < 1) { alert('Nhập kích thước khối (số px lớn hơn 0).'); return; }
-        if (!ddT.selection || !ddL.selection || !ddR.selection) { alert('Chọn đủ 3 layer cho 3 mặt.'); return; }
-        var t = layers[ddT.selection.index].id, l = layers[ddL.selection.index].id, r = layers[ddR.selection.index].id;
-        if (t == l || t == r || l == r) { alert('3 mặt phải là 3 layer khác nhau.'); return; }
-        res = o; res.mode = 'cube'; res.layers = { top: t, left: l, right: r }; w.close(1);
+    dd.onChange = changed; ddRot.onChange = changed; cbKeep.onClick = changed;
+    rTop.onClick = changed; rLeft.onClick = changed; rRight.onClick = changed;
+    ddOne.onChange = changed; ddT.onChange = changed; ddL.onChange = changed; ddR.onChange = changed;
+    eA.onChange = changed; eB.onChange = changed; eH.onChange = changed;
+    tabs.onChange = function () { revert(); status.text = ' '; changed(); };
+    cbLive.onClick = function () { if (cbLive.value) preview(false); else { revert(); try { app.refresh(); } catch (e) { } status.text = ' '; } };
+    bPrev.onClick = function () { preview(false); };
+
+    var result = null;
+    bOK.onClick = function () {
+        var o = preview(false);   // nếu đã xem trước đúng thiết lập này thì giữ luôn, không làm lại
+        if (!o) return;
+        result = o; w.close(1);
     };
+    bCancel.onClick = function () { revert(); w.close(2); };
+    w.onClose = function () { if (!result) revert(); };
+
+    w.onShow = function () { refreshDrawing(); if (cbLive.value) preview(false); };
     w.show();
-    return res;
+    return result;
 }
 
 // ---------------------------------------------------------------------------
 function main() {
     if (!app.documents.length) { alert('Hãy mở một file ảnh trước.'); return; }
     var doc = app.activeDocument;
-    var prefs = loadPrefs();
-    var def = Math.round(Math.min(doc.width.as('px'), doc.height.as('px')) * 0.3);
-    if (!prefs.a) prefs.a = def; if (!prefs.b) prefs.b = def; if (!prefs.h) prefs.h = def;
-
-    var layers = allLayers(), sel = selectedLayerIDs();
-    var opt = showDialog(prefs, layers, sel);
-    if (!opt) return;
-    savePrefs(opt);
-
     var oldUnits = app.preferences.rulerUnits;
     app.preferences.rulerUnits = Units.PIXELS;
-    var out = { warns: [], err: '' };
-    $.global.__XI_OPT = opt; $.global.__XI_OUT = out;
     try {
-        doc.suspendHistory(opt.mode == 'cube' ? 'Dựng khối hộp' : 'Xoay ' + FACE_LABEL[opt.face], '__XI_run()');
-    } catch (e) { if (!out.err) out.err = e.message; }
-    app.preferences.rulerUnits = oldUnits;
-    if (out.err) alert('Có lỗi: ' + out.err + '\n\nBạn chụp màn hình gửi lại giúp mình nhé.');
-    else if (out.warns.length) alert(out.warns.join('\n'));
-}
-function __XI_run() {
-    var o = $.global.__XI_OPT, out = $.global.__XI_OUT;
-    try { out.warns = (o.mode == 'cube') ? runCube(o) : runFaces(o); }
-    catch (e) { out.err = e.message + (e.line ? ' (dòng ' + e.line + ')' : ''); }
+        var prefs = loadPrefs();
+        var layers = allLayers(), sel = selectedLayerIDs();
+        if (!layers.length) { alert('Tài liệu chưa có layer ảnh nào.'); return; }
+        // Kích thước khối mặc định: theo ảnh đang chọn (cạnh ngắn), nếu chưa có thì 30% khổ giấy
+        var def = 0;
+        try { var b0 = boundsBox(sel[0]); def = Math.round(Math.min(b0.w, b0.h)); } catch (e) { }
+        if (!(def > 10)) def = Math.round(Math.min(doc.width.as('px'), doc.height.as('px')) * 0.3);
+        if (!prefs.a) prefs.a = def; if (!prefs.b) prefs.b = def; if (!prefs.h) prefs.h = def;
+        prefs.tab = sel.length >= 3 ? 1 : 0;
+
+        var opt = showDialog(prefs, layers, sel);
+        if (!opt) return;
+        savePrefs(opt);
+        var out = opt.out;
+        if (out && out.err) alert('Có lỗi: ' + out.err + '\n\nBạn chụp màn hình gửi lại giúp mình nhé.');
+        else if (out && out.warns.length) alert(out.warns.join('\n'));
+    } finally {
+        app.preferences.rulerUnits = oldUnits;
+    }
 }
 
 main();
