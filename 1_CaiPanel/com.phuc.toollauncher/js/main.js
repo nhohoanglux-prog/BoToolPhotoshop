@@ -3,7 +3,7 @@
     'use strict';
 
     // ===== Phiên bản panel – tăng số này mỗi lần sửa panel =====
-    var PANEL_VERSION = '1.4.0';
+    var PANEL_VERSION = '1.5.0';
     var PANEL_DATE = '2026-11-25';
     // Nơi lấy bản mới (kho GitHub công khai, cùng cấu trúc với file zip)
     var REPO = 'nhohoanglux-prog/BoToolPhotoshop';
@@ -14,7 +14,7 @@
 
     var cep = window.__adobe_cep__;
     var KEY_FOLDER = 'tl.folder', KEY_RECENT = 'tl.recent', KEY_CLOSED = 'tl.closed';
-    var KEY_SEEN = 'tl.seen', NEW_DAYS = 7;
+    var KEY_SEEN = 'tl.seen', NEW_DAYS = 7, el_noHide = false;
     var tools = [], visible = [], selIndex = 0, busy = false, lastInfo = null, toolsLoaded = false, autoChecked = false, updateQueued = false, pendingHost = 0, busyTimer = null;
 
     var $ = function (id) { return document.getElementById(id); };
@@ -174,8 +174,46 @@
     }
 
     // ---- Chạy tool ----
+    // ---- Tự ẩn bảng khi chạy tool ----
+    var BG_ID = 'com.phuc.toollauncher.bg', KEY_AUTOHIDE = 'tl.autoHide';
+    function autoHideOn() { return store(KEY_AUTOHIDE) !== '0'; }
+    function rememberRun(t) {
+        clearNew(t);
+        var recent = loadJSON(KEY_RECENT, []).filter(function (p) { return p !== t.path; });
+        recent.unshift(t.path);
+        store(KEY_RECENT, JSON.stringify(recent.slice(0, 5)));
+    }
+    // Gửi tool cho phần chạy ngầm rồi đóng bảng. Không thấy phần chạy ngầm trả lời
+    // trong 1,2 giây (ví dụ chưa khởi động lại Photoshop) thì chạy ngay trong bảng như cũ.
+    function runHidden(t, el, fallback) {
+        var id = String(Date.now()), done = false;
+        var onAck = function (ev) {
+            var d = ev && ev.data;
+            if (done || (d && String(d) !== id)) return;
+            done = true;
+            cep.dispatchEvent({ type: 'com.phuc.toollauncher.go', scope: 'APPLICATION', appId: '', extensionId: 'com.phuc.toollauncher.panel', data: id });
+            rememberRun(t);
+            setStatus('Đang chạy: ' + t.name + ' (bảng tự mở lại khi xong)');
+            setTimeout(function () { cep.closeExtension(); }, 50);
+        };
+        cep.addEventListener('com.phuc.toollauncher.ack', onAck);
+        cep.dispatchEvent({ type: 'com.phuc.toollauncher.run', scope: 'APPLICATION', appId: '', extensionId: 'com.phuc.toollauncher.panel',
+            data: JSON.stringify({ id: id, path: t.path, name: t.name }) });
+        setTimeout(function () {
+            if (done) return;
+            done = true;
+            try { cep.removeEventListener('com.phuc.toollauncher.ack', onAck); } catch (e) {}
+            fallback();
+        }, 1200);
+    }
+
     function runTool(t, el) {
         if (busy) return;
+        if (cep && autoHideOn() && !el_noHide) {
+            busy = true;
+            setStatus('Đang mở: ' + t.name + '…');
+            return runHidden(t, el, function () { busy = false; el_noHide = true; runTool(t, el); el_noHide = false; });
+        }
         busy = true;
         if (el) el.classList.add('running');
         setStatus('Đang chạy: ' + t.name + '…');
@@ -184,10 +222,7 @@
             if (el) el.classList.remove('running');
             if (res && res.indexOf('ERR:') === 0) { setStatus('Lỗi khi chạy “' + t.name + '”: ' + res.slice(4), true); return; }
             setStatus('Đã chạy xong: ' + t.name);
-            clearNew(t);
-            var recent = loadJSON(KEY_RECENT, []).filter(function (p) { return p !== t.path; });
-            recent.unshift(t.path);
-            store(KEY_RECENT, JSON.stringify(recent.slice(0, 5)));
+            rememberRun(t);
             render();
         });
     }
@@ -400,6 +435,11 @@
     if (cep) applyTheme();
     $('ver').innerHTML = 'Tool Launcher v' + PANEL_VERSION + ' · ' + fmtDate(PANEL_DATE) + ' · <a id="lnkNews">Có gì mới ›</a>';
     $('lnkNews').onclick = showChangelog;
+    var chk = $('chkHide');
+    chk.checked = autoHideOn();
+    chk.onchange = function () { store(KEY_AUTOHIDE, chk.checked ? '1' : '0'); setStatus(chk.checked ? 'Bấm tool thì bảng tự ẩn, chạy xong tự hiện lại.' : 'Bảng sẽ không tự ẩn khi chạy tool.'); };
+    // Đánh thức phần chạy ngầm (nếu Photoshop chưa tự bật)
+    if (cep) { try { cep.requestOpenExtension(BG_ID, ''); } catch (e) {} }
     reload();
     // Thông báo sau khi panel vừa tự cập nhật và tải lại
     // Lần đầu mở một phiên bản panel mới: tự hiện "Có gì mới"
