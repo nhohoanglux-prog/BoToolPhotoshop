@@ -29,9 +29,9 @@
     {
       "path": "SoTrangTuDong.jsx",
       "name": "Số trang tự động",
-      "version": "1.0.1",
+      "version": "1.1.0",
       "date": "2026-11-25",
-      "notes": "Sửa lỗi \"The layer cannot contain text\" khi bấm Xem trước / Cập nhật tất cả (số trang trong artboard giờ được tạo như khi bấm công cụ chữ)."
+      "notes": "\"Xem trước\" giờ chỉ gắn thử số cho vài trang đầu (mặc định 3 trang, thấy được cả trang trái lẫn trang phải) nên rất nhanh; ưng rồi mới bấm \"Cập nhật tất cả\" để áp cho mọi trang, bấm Hủy là bỏ hết số xem thử."
     },
     {
       "path": "XoayIsometric.jsx",
@@ -49,6 +49,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "SoTrangTuDong.jsx v1.1.0: \"Xem trước\" giờ chỉ gắn thử số cho vài trang đầu (mặc định 3 trang, thấy được cả trang trái lẫn trang phải) nên rất nhanh; ưng rồi mới bấm \"Cập nhật tất cả\" để áp cho mọi trang, bấm Hủy là bỏ hết số xem thử."
+    },
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.0.1: sửa lỗi \"The layer cannot contain text\" khi bấm Xem trước / Cập nhật tất cả (số trang trong artboard giờ được tạo như khi bấm công cụ chữ)."
@@ -84,10 +88,6 @@
     {
       "date": "2026-11-25",
       "text": "Panel Tool Launcher v1.4.0: bản mới hiện ngay sau khi đưa lên, không phải chờ ~5 phút như trước (panel hỏi GitHub mã bản mới nhất rồi tải đúng bản đó)."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "XoayIsometric.jsx v1.2.0: khối hộp không còn quá to: kích thước tự tính theo 3 ảnh gốc (100% = khối rộng bằng trung bình 3 ảnh), thêm thanh trượt \"Độ lớn khối\" 10–200% để thu / phóng khi đang xem trước."
     }
   ]
 }

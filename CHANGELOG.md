@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- SoTrangTuDong.jsx v1.1.0: "Xem trước" giờ chỉ gắn thử số cho vài trang đầu (mặc định 3 trang, thấy được cả trang trái lẫn trang phải) nên rất nhanh; ưng rồi mới bấm "Cập nhật tất cả" để áp cho mọi trang, bấm Hủy là bỏ hết số xem thử.
 - SoTrangTuDong.jsx v1.0.1: sửa lỗi "The layer cannot contain text" khi bấm Xem trước / Cập nhật tất cả (số trang trong artboard giờ được tạo như khi bấm công cụ chữ).
 - SoTrangTuDong.jsx v1.0.0: tool mới "Số trang tự động" kiểu Canva: gắn số cho mọi artboard theo thứ tự trang, 3 kiểu "01", "Trang 01", "01 / 43" (hoặc tự gõ mẫu), đối xứng như sách (trang trái số ở góc trái, trang phải ở góc phải), bìa không hiện số nhưng vẫn tính là trang 1, chọn trang bắt đầu, số bắt đầu và trang bỏ qua; chỉnh tay 1 số trang (font, cỡ, màu, vị trí) rồi chạy tool, bấm "Cập nhật tất cả" là mọi trang đổi theo. Kiểu được lưu ngay trong file.
 - XoayIsometric.jsx v1.6.0: hộp thoại gọn hơn nhiều (bỏ khung minh hoạ to, gom chữ hướng dẫn vào nút "?", các nút xếp sát nhau); lần đầu mở nằm sát bên phải màn hình, thanh tiêu đề luôn nằm trong màn hình để kéo được; nhớ vị trí bạn kéo tới cho lần sau.

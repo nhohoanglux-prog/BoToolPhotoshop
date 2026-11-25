@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), đối xứng như sách; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.0.1
+  @version: 1.1.0
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.0.1';
+var TOOL_VERSION = '1.1.0';
 var TAG = '[Số trang]';
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
@@ -126,6 +126,8 @@ function saveDocStyle(doc, str) {
         return true;
     } catch (e) { return false; }
 }
+function loadPrevN() { try { var n = app.getCustomOptions('SoTrangTuDong_prev').getInteger(s('n')); return n >= 1 ? n : 3; } catch (e) { return 3; } }
+function savePrevN(n) { try { var d = new ActionDescriptor(); d.putInteger(s('n'), n); app.putCustomOptions('SoTrangTuDong_prev', d, true); } catch (e) { } }
 function loadLastStyle() {
     try { return app.getCustomOptions('SoTrangTuDong_last').getString(s('v')); } catch (e) { return ''; }
 }
@@ -209,7 +211,8 @@ function isSkipped(st, arts, i, list) {
 // ---------------------------------------------------------------------------
 // Áp kiểu cho tất cả artboard
 // ---------------------------------------------------------------------------
-function applyAll(st, arts, fxFromId) {
+// limit > 0: chỉ làm 'limit' trang có số đầu tiên (xem trước nhanh), các trang sau để nguyên.
+function applyAll(st, arts, fxFromId, limit) {
     var doc = app.activeDocument;
     var res = doc.resolution;
     var list = parseList(st.skipList, arts.length);
@@ -221,7 +224,10 @@ function applyAll(st, arts, fxFromId) {
     var fxOK = false;
     if (fxFromId) { try { selectById(fxFromId); executeAction(c('CpFX'), undefined, DialogModes.NO); fxOK = true; } catch (e) { fxOK = false; } }
 
+    var done = 0;
+    stat.pages = [];
     for (var i = 0; i < arts.length; i++) {
+        if (limit > 0 && done >= limit) break;
         var ab = arts[i];
         var set = layerSetById(doc, ab.id);
         if (!set) { stat.warns.push('Không tìm thấy artboard "' + ab.name + '".'); continue; }
@@ -266,6 +272,7 @@ function applyAll(st, arts, fxFromId) {
 
         if (fxOK) { try { doc.activeLayer = lyr; executeAction(c('PaFX'), undefined, DialogModes.NO); } catch (e) { } }
         if (isNew) stat.added++; else stat.updated++;
+        done++; stat.pages.push(i + 1);
     }
     return stat;
 }
@@ -323,15 +330,15 @@ function selectById(id) {
 }
 
 // Chạy trong suspendHistory (1 bước History)
-function runOp(title, mode, st, arts, fxFromId) {
-    $.global.__ST = { mode: mode, st: st, arts: arts, fx: fxFromId, out: null, err: '' };
+function runOp(title, mode, st, arts, fxFromId, limit) {
+    $.global.__ST = { mode: mode, st: st, arts: arts, fx: fxFromId, limit: limit || 0, out: null, err: '' };
     try { app.activeDocument.suspendHistory(title, '__ST_run()'); }
     catch (e) { if (!$.global.__ST.err) $.global.__ST.err = e.message; }
     return $.global.__ST;
 }
 function __ST_run() {
     var g = $.global.__ST;
-    try { g.out = g.mode == 'remove' ? { removed: removeAll(g.arts), warns: [] } : applyAll(g.st, g.arts, g.fx); }
+    try { g.out = g.mode == 'remove' ? { removed: removeAll(g.arts), warns: [] } : applyAll(g.st, g.arts, g.fx, g.limit); }
     catch (e) { g.err = e.message + (e.line ? ' (dòng ' + e.line + ')' : ''); }
 }
 
@@ -417,6 +424,7 @@ function placeWindow(w) {
 }
 
 var HELP = 'SỐ TRANG TỰ ĐỘNG\n\n' +
+    '• "Xem trước" chỉ gắn thử số cho vài trang đầu (ô bên cạnh, mặc định 3) nên rất nhanh. Ưng rồi mới bấm "Cập nhật tất cả". Hủy = bỏ hết số xem thử.\n' +
     '• Bấm "Cập nhật tất cả" là gắn / cập nhật số cho MỌI artboard theo thứ tự trang (trên xuống, trái sang).\n' +
     '• Muốn đổi kiểu: chạy lại tool, sửa 1 chỗ, bấm "Cập nhật tất cả" là tất cả đổi theo. Kiểu được lưu ngay trong file PSD.\n' +
     '• Thêm / bớt / dời artboard: chạy lại tool, bấm "Cập nhật tất cả" là số tự đánh lại.\n' +
@@ -430,7 +438,7 @@ var HELP = 'SỐ TRANG TỰ ĐỘNG\n\n' +
 function showDialog(st, arts, fromActive) {
     var doc = app.activeDocument;
     var startState = doc.activeHistoryState;
-    var previewed = false, lastKey = '', result = null;
+    var previewed = false, lastKey = '', result = null, previewAll = false;
 
     var w = new Window('dialog', 'Số trang tự động  v' + TOOL_VERSION);
     w.orientation = 'column'; w.alignChildren = 'fill'; w.margins = [8, 6, 8, 6]; w.spacing = 4;
@@ -483,6 +491,10 @@ function showDialog(st, arts, fromActive) {
     var r5 = row(); r5.alignment = 'right';
     var bRemove = r5.add('button', undefined, 'Gỡ hết số'); bRemove.helpTip = 'Xoá mọi layer số trang';
     var bPrev = r5.add('button', undefined, 'Xem trước');
+    bPrev.helpTip = 'Chỉ gắn thử số cho vài trang đầu để xem nhanh. Ưng rồi bấm "Cập nhật tất cả".';
+    var ePrevN = r5.add('edittext', undefined, String(loadPrevN())); ePrevN.characters = 2;
+    ePrevN.helpTip = 'Số trang xem trước (mặc định 3: thấy được cả trang trái và trang phải)';
+    r5.add('statictext', undefined, 'trang');
     var bHelp = r5.add('button', undefined, '?'); bHelp.preferredSize = [26, 24];
     var bOK = r5.add('button', undefined, 'Cập nhật tất cả', { name: 'ok' });
     bOK.helpTip = 'Gắn / cập nhật số cho mọi trang theo kiểu này (font, cỡ, màu, vị trí) rồi đóng';
@@ -518,18 +530,24 @@ function showDialog(st, arts, fromActive) {
         status.text = (msg ? msg + '  ·  ' : '') + arts.length + ' trang, gắn số ' + countShown(o) + ' trang. Trang thứ ' + (fi + 1) + ' hiện "' + pageText(o, arts, fi) + '", trang cuối "' + pageText(o, arts, arts.length - 1) + '"';
     }
     function revert() {
-        if (previewed) { try { doc.activeHistoryState = startState; } catch (e) { } previewed = false; lastKey = ''; }
+        if (previewed) { try { doc.activeHistoryState = startState; } catch (e) { } previewed = false; lastKey = ''; previewAll = false; }
     }
-    function preview(silent) {
+    // all = false: chỉ vài trang đầu (nhanh); all = true: mọi trang
+    function preview(silent, all) {
         var o = collect(), key = styleToString(o);
-        if (previewed && key == lastKey) return o;
+        var n = all ? 0 : Math.max(1, Math.min(arts.length, intOf(ePrevN, 3, 1)));
+        if (previewed && key == lastKey && (previewAll || !all)) return o;
         revert();
-        var g = runOp('Số trang tự động', 'apply', o, arts, fxFrom);
-        previewed = true; lastKey = key;
+        if (all) status.text = 'Đang cập nhật ' + arts.length + ' trang…';
+        var g = runOp('Số trang tự động', 'apply', o, arts, fxFrom, n);
+        previewed = true; lastKey = key; previewAll = !!all;
         try { app.refresh(); } catch (e) { }
         if (g.err) { status.text = 'Lỗi: ' + g.err; if (!silent) alert('Có lỗi: ' + g.err + '\n\nBạn chụp màn hình gửi lại giúp mình nhé.'); return null; }
         var out = g.out;
-        updateStatus('Đã xem trước: thêm ' + out.added + ', sửa ' + out.updated + ', xoá ' + out.removed);
+        if (!all) {
+            savePrevN(n);
+            status.text = out.pages.length ? 'Đang xem thử trang thứ ' + out.pages.join(', ') + ' (gần bìa). Ưng thì bấm "Cập nhật tất cả", chưa ưng thì sửa rồi bấm Xem trước lại.' : 'Không có trang nào được gắn số với thiết lập này.';
+        }
         o.__warns = out.warns; o.__out = out;
         return o;
     }
@@ -563,7 +581,7 @@ function showDialog(st, arts, fromActive) {
         updateStatus();
     };
     bHelp.onClick = function () { alert(HELP); };
-    bPrev.onClick = function () { preview(false); };
+    bPrev.onClick = function () { preview(false, false); };
     bRemove.onClick = function () {
         if (!confirm('Xoá mọi layer số trang trong ' + arts.length + ' artboard?')) return;
         revert();
@@ -573,7 +591,7 @@ function showDialog(st, arts, fromActive) {
         w.close(1);
     };
     bOK.onClick = function () {
-        var o = preview(false);
+        var o = preview(false, true);
         if (!o) return;
         result = o; w.close(1);
     };
