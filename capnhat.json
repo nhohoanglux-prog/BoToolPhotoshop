@@ -22,9 +22,9 @@
     {
       "path": "XoayIsometric.jsx",
       "name": "Xoay ảnh Isometric",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "date": "2026-11-25",
-      "notes": "Khối hộp bớt cắt ảnh: thêm ô \"Khối theo tỉ lệ ảnh\" (bật sẵn, 2 mặt tường giữ trọn ảnh); ảnh gốc vẫn nguyên trong Smart Object và mask không dính vào ảnh nữa, nên dựng xong bạn dùng Move tool (V) kéo ảnh qua lại để chọn phần muốn hiện, khung mặt đứng yên."
+      "notes": "Thêm ô \"Khóa khối\" (bật sẵn): dựng xong 3 layer được liên kết với nhau và mask dính với ảnh, kéo 1 mặt là cả khối đi theo. Muốn dịch ảnh trong 1 mặt thì bấm tắt biểu tượng xích giữa ảnh và mask, kéo xong bấm lại."
     },
     {
       "path": "XuatArtboardNen.jsx",
@@ -35,6 +35,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "XoayIsometric.jsx v1.5.0: thêm ô \"Khóa khối\" (bật sẵn): dựng xong 3 layer được liên kết với nhau và mask dính với ảnh, kéo 1 mặt là cả khối đi theo. Muốn dịch ảnh trong 1 mặt thì bấm tắt biểu tượng xích giữa ảnh và mask, kéo xong bấm lại."
+    },
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.4.0: khối hộp bớt cắt ảnh: thêm ô \"Khối theo tỉ lệ ảnh\" (bật sẵn, 2 mặt tường giữ trọn ảnh); ảnh gốc vẫn nguyên trong Smart Object và mask không dính vào ảnh nữa, nên dựng xong bạn dùng Move tool (V) kéo ảnh qua lại để chọn phần muốn hiện, khung mặt đứng yên."
@@ -70,10 +74,6 @@
     {
       "date": "2026-11-25",
       "text": "XuatArtboardNen.jsx v1.3.0: xuất xong có nút \"Mở thư mục chứa file\" (mở File Explorer, tô sẵn file vừa xuất) và nút \"Mở file PDF\" / \"Mở ảnh đầu tiên\"."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "XuatArtboardNen.jsx v1.2.0: nút \"Chất lượng cao nhất\" giờ luôn xuất 300 DPI, chất lượng 12, không giới hạn dung lượng, chỉ 1 lần. Khi có giới hạn MB, script ước tính trước bằng vài trang mẫu nên thường chỉ xuất 1 lần, nhanh hơn nhiều."
     }
   ]
 }

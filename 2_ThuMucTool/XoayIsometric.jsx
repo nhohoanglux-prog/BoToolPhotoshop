@@ -3,7 +3,7 @@
   @name: Xoay ảnh Isometric
   @group: Hình chiếu trục đo
   @desc: Biến ảnh phẳng thành mặt trên / mặt trái / mặt phải theo góc isometric, dimetric, 45°, 30/60, cavalier… (giữ Smart Object) và dựng khối hộp từ 3 ảnh.
-  @version: 1.4.0
+  @version: 1.5.0
   @date: 2026-11-25
 
   XoayIsometric.jsx
@@ -16,7 +16,7 @@
   Dùng cho Photoshop 2021/2022 trở lên. CHƯA thử trên Photoshop thật.
 */
 
-var TOOL_VERSION = '1.4.0';
+var TOOL_VERSION = '1.5.0';
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
 
@@ -404,6 +404,19 @@ function unlinkMask() {
     } catch (e) { }
 }
 
+// Liên kết (Link Layers) các layer để kéo cả khối đi cùng nhau
+function linkLayers(ids) {
+    for (var i = 0; i < ids.length; i++) selectLayerByID(ids[i], i > 0);
+    try {
+        var d = new ActionDescriptor(); d.putReference(c('null'), refTarget());
+        executeAction(s('linkSelectedLayers'), d, DialogModes.NO);
+        return;
+    } catch (e) { }
+    // Dự phòng bằng DOM
+    selectLayerByID(ids[0]); var first = app.activeDocument.activeLayer;
+    for (var j = 1; j < ids.length; j++) { selectLayerByID(ids[j]); app.activeDocument.activeLayer.link(first); }
+}
+
 // Gom các layer (theo ID) vào 1 group ngay tại chỗ (giữ trong artboard/group cũ), như Ctrl+G
 function groupLayers(ids, name) {
     for (var i = 0; i < ids.length; i++) selectLayerByID(ids[i], i > 0);
@@ -463,10 +476,11 @@ function runCube(opt) {
         var r = applyFace(opt.layers[f], Pf, odd ? { w: fc.hh, h: fc.w } : { w: fc.w, h: fc.hh }, centerOf(fc.q));
         if (r.warn) warns.push(FACE_LABEL[f] + ': ' + r.warn);
         maskToQuad(fc.q);
-        unlinkMask();
+        if (!opt.lock) unlinkMask();
         ids.push(r.id);
     }
     try { groupLayers(ids, 'Khối hộp - ' + p.name); } catch (e) { warns.push('Không gom được group: ' + e.message); }
+    if (opt.lock) { try { linkLayers(ids); } catch (e2) { warns.push('Không liên kết được 3 layer: ' + e2.message); } }
     return warns;
 }
 
@@ -474,7 +488,7 @@ function runCube(opt) {
 // Hộp thoại (có xem trước trực tiếp trên ảnh)
 // ---------------------------------------------------------------------------
 function loadPrefs() {
-    var o = { preset: 0, rot: 0, keep: false, a: 0, b: 0, h: 0, live: false, face: 'left', pct: 100, flip: false, ratio: true };
+    var o = { preset: 0, rot: 0, keep: false, a: 0, b: 0, h: 0, live: false, face: 'left', pct: 100, flip: false, ratio: true, lock: true };
     try {
         var d = app.getCustomOptions('XoayIsometric_prefs');
         o.preset = d.getInteger(s('preset')); o.rot = d.getInteger(s('rot')); o.keep = d.getBoolean(s('keep'));
@@ -482,6 +496,7 @@ function loadPrefs() {
         if (d.hasKey(s('live2'))) o.live = d.getBoolean(s('live2'));
         if (d.hasKey(s('flip'))) o.flip = d.getBoolean(s('flip'));
         if (d.hasKey(s('ratio'))) o.ratio = d.getBoolean(s('ratio'));
+        if (d.hasKey(s('lock'))) o.lock = d.getBoolean(s('lock'));
         if (d.hasKey(s('face'))) o.face = d.getString(s('face'));
         if (d.hasKey(s('pct'))) o.pct = d.getInteger(s('pct'));
         if (!(o.pct >= 10 && o.pct <= 200)) o.pct = 100;
@@ -494,7 +509,7 @@ function savePrefs(o) {
         var d = new ActionDescriptor();
         d.putInteger(s('preset'), o.preset); d.putInteger(s('rot'), o.rot); d.putBoolean(s('keep'), o.keep);
         d.putInteger(s('a'), o.a); d.putInteger(s('b'), o.b); d.putInteger(s('h'), o.h);
-        d.putBoolean(s('live2'), o.live); d.putBoolean(s('flip'), !!o.flip); d.putBoolean(s('ratio'), o.ratio !== false); d.putString(s('face'), o.face || 'left'); d.putInteger(s('pct'), o.pct || 100);
+        d.putBoolean(s('live2'), o.live); d.putBoolean(s('flip'), !!o.flip); d.putBoolean(s('ratio'), o.ratio !== false); d.putBoolean(s('lock'), o.lock !== false); d.putString(s('face'), o.face || 'left'); d.putInteger(s('pct'), o.pct || 100);
         app.putCustomOptions('XoayIsometric_prefs', d, true);
     } catch (e) { }
 }
@@ -600,7 +615,8 @@ function showDialog(prefs, layers, selIds) {
     var bAuto = gz.add('button', undefined, 'Về 100%');
     var cbRatio = t2.add('checkbox', undefined, 'Khối theo tỉ lệ ảnh (2 mặt tường giữ trọn ảnh, ít bị cắt nhất)'); cbRatio.value = prefs.ratio;
     t2.add('statictext', undefined, '100% = khối rộng bằng trung bình 3 ảnh gốc. Kéo thanh trượt để thu / phóng, hoặc gõ số px.');
-    t2.add('statictext', undefined, 'Sau khi dựng: chọn layer ảnh, dùng Move tool (V) kéo ảnh để chọn phần hiện ra, khung mặt đứng yên.');
+    var cbLock = t2.add('checkbox', undefined, 'Khóa khối: liên kết 3 layer và mask với ảnh (kéo đi cả khối)'); cbLock.value = prefs.lock;
+    t2.add('statictext', undefined, 'Muốn dịch ảnh trong 1 mặt: bấm biểu tượng xích giữa ảnh và mask cho tắt, kéo ảnh bằng V, rồi bấm lại.');
     t2.add('statictext', undefined, 'Khối được dựng ngay chỗ 3 ảnh đang nằm, rồi gom vào 1 group tại chỗ.');
     t2.add('statictext', undefined, 'Mẹo: chọn sẵn 3 layer (trên cùng = mặt trên, giữa = trái, dưới = phải) rồi mở tool.');
 
@@ -649,7 +665,7 @@ function showDialog(prefs, layers, selIds) {
                   frot: { top: fT.rot, left: fL.rot, right: fR.rot },
                   fflip: { top: fT.flip.value, left: fL.flip.value, right: fR.flip.value },
                   a: parseInt(eA.text, 10) || 0, b: parseInt(eB.text, 10) || 0, h: parseInt(eH.text, 10) || 0,
-                  live: cbLive.value, face: curFace(), tab: isCube() ? 1 : 0, pct: Math.round(sl.value), ratio: cbRatio.value };
+                  live: cbLive.value, face: curFace(), tab: isCube() ? 1 : 0, pct: Math.round(sl.value), ratio: cbRatio.value, lock: cbLock.value };
         if (isCube()) {
             o.mode = 'cube';
             if (o.a < 1 || o.b < 1 || o.h < 1) return { bad: 'Nhập kích thước khối (số px lớn hơn 0).' };
@@ -664,7 +680,7 @@ function showDialog(prefs, layers, selIds) {
         }
         return o;
     }
-    function keyOf(o) { return [o.mode, o.preset, o.rot, o.keep, o.flip, o.frot.top, o.frot.left, o.frot.right, o.fflip.top, o.fflip.left, o.fflip.right, o.a, o.b, o.h, o.face, o.layer, o.layers ? o.layers.top + '-' + o.layers.left + '-' + o.layers.right : ''].join('|'); }
+    function keyOf(o) { return [o.mode, o.lock, o.preset, o.rot, o.keep, o.flip, o.frot.top, o.frot.left, o.frot.right, o.fflip.top, o.fflip.left, o.fflip.right, o.a, o.b, o.h, o.face, o.layer, o.layers ? o.layers.top + '-' + o.layers.left + '-' + o.layers.right : ''].join('|'); }
     function revert() {
         if (!previewed) return;
         try { doc.activeHistoryState = startState; } catch (e) { }
@@ -723,6 +739,7 @@ function showDialog(prefs, layers, selIds) {
     ddT.onChange = sizeChanged; ddL.onChange = sizeChanged; ddR.onChange = sizeChanged;
     sl.onChanging = function () { sizeFromSlider(); };
     sl.onChange = sizeChanged;
+    cbLock.onClick = function () { changed(); };
     cbRatio.onClick = function () { sizeFromSlider(); changed(); };
     bAuto.onClick = function () { sl.value = 100; sizeChanged(); };
     var typed = function () { cbRatio.value = false; changed(); }; // tự gõ số thì tắt chế độ theo tỉ lệ ảnh
