@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- Panel Tool Launcher v1.4.0: bản mới hiện ngay sau khi đưa lên, không phải chờ ~5 phút như trước (panel hỏi GitHub mã bản mới nhất rồi tải đúng bản đó).
 - XoayIsometric.jsx v1.2.0: khối hộp không còn quá to: kích thước tự tính theo 3 ảnh gốc (100% = khối rộng bằng trung bình 3 ảnh), thêm thanh trượt "Độ lớn khối" 10–200% để thu / phóng khi đang xem trước.
 - XoayIsometric.jsx v1.1.0: chia 2 thẻ "Xoay 1 ảnh" (chỉ xoay đúng ảnh bạn chọn) và "Dựng khối hộp từ 3 ảnh"; xem trước trực tiếp trên ảnh, bấm "Xong" để giữ, "Hủy" để trả lại như cũ; sửa lỗi khối hộp bị bay lung tung: khối giờ dựng ngay chỗ 3 ảnh đang nằm và gom group tại chỗ (vẫn nằm trong artboard).
 - Panel Tool Launcher v1.3.0: hết treo ở "Đang quét thư mục…" khi Photoshop đang Transform hoặc mở hộp thoại; panel báo rõ và tự chạy tiếp khi Photoshop rảnh. Sửa lỗi ghi nhầm "tool mới" cho tool đã có.

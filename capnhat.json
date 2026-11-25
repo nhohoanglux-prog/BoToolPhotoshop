@@ -1,8 +1,8 @@
 {
   "panel": {
-    "version": "1.3.0",
+    "version": "1.4.0",
     "date": "2026-11-25",
-    "notes": "Hết treo ở \"Đang quét thư mục…\" khi Photoshop đang Transform hoặc mở hộp thoại; panel báo rõ và tự chạy tiếp khi Photoshop rảnh. Sửa lỗi ghi nhầm \"tool mới\" cho tool đã có.",
+    "notes": "Bản mới hiện ngay sau khi đưa lên, không phải chờ ~5 phút như trước (panel hỏi GitHub mã bản mới nhất rồi tải đúng bản đó).",
     "files": [
       "CSXS/manifest.xml",
       "css/style.css",
@@ -35,6 +35,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "Panel Tool Launcher v1.4.0: bản mới hiện ngay sau khi đưa lên, không phải chờ ~5 phút như trước (panel hỏi GitHub mã bản mới nhất rồi tải đúng bản đó)."
+    },
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.2.0: khối hộp không còn quá to: kích thước tự tính theo 3 ảnh gốc (100% = khối rộng bằng trung bình 3 ảnh), thêm thanh trượt \"Độ lớn khối\" 10–200% để thu / phóng khi đang xem trước."
@@ -70,10 +74,6 @@
     {
       "date": "2026-11-25",
       "text": "XuatArtboardNen.jsx v1.1.0: thêm nút \"Chất lượng cao nhất\" (xuất ngay 300 DPI, JPEG 12, vẫn giữ giới hạn MB nếu có); mặc định DPI cao nhất đổi thành 300."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "Panel Tool Launcher v1.1.0: thêm số phiên bản, ngày cập nhật và nút \"⬇ Cập nhật\"."
     }
   ]
 }

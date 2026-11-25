@@ -49,7 +49,7 @@ Kho này là bản gốc duy nhất (bản trong /mnt/project-files chỉ là b�
 3. Chạy `python3 dong_goi.py` (tạo lại `capnhat.json` và `/mnt/project-files/BoToolPhotoshop.zip`), commit, push lên `main`.
 4. Báo người dùng: mở panel là thấy khung "🔔 Có bản mới" kèm ghi chú, bấm "⬇ Cập nhật ngay". Tool vừa cập nhật có nhãn MỚI.
    Chỉ gửi zip mới khi cài lần đầu hoặc khi sửa `CaiDat.bat`/`manifest.xml`.
-   GitHub raw có thể trễ tới ~5 phút sau khi push.
+   Từ panel v1.4.0, panel lấy mã commit mới nhất qua api.github.com rồi tải raw theo mã đó nên bản mới hiện ngay (API lỗi/hết 60 lượt/giờ thì quay về main/, có thể trễ ~5 phút).
 
 ## Các tool hiện có
 | File | Nhóm | Làm gì |

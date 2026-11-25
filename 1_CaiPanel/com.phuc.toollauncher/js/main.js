@@ -3,10 +3,14 @@
     'use strict';
 
     // ===== Phiên bản panel – tăng số này mỗi lần sửa panel =====
-    var PANEL_VERSION = '1.3.0';
+    var PANEL_VERSION = '1.4.0';
     var PANEL_DATE = '2026-11-25';
     // Nơi lấy bản mới (kho GitHub công khai, cùng cấu trúc với file zip)
-    var UPDATE_BASE = 'https://raw.githubusercontent.com/nhohoanglux-prog/BoToolPhotoshop/main/';
+    var REPO = 'nhohoanglux-prog/BoToolPhotoshop';
+    var UPDATE_BASE = 'https://raw.githubusercontent.com/' + REPO + '/main/';
+    // Link "main/" bị GitHub giữ bản cũ tới ~5 phút. Hỏi GitHub API mã commit mới nhất
+    // rồi tải theo đúng mã đó thì luôn có bản mới ngay. API lỗi/hết lượt thì quay về main/.
+    var activeBase = UPDATE_BASE;
 
     var cep = window.__adobe_cep__;
     var KEY_FOLDER = 'tl.folder', KEY_RECENT = 'tl.recent', KEY_CLOSED = 'tl.closed';
@@ -237,11 +241,11 @@
         };
         if (lastInfo) return go(lastInfo);
         setStatus('Đang tải ghi chú cập nhật…');
-        httpGet(UPDATE_BASE + 'capnhat.json', function (err, txt) {
+        resolveBase(function () { httpGet(activeBase + 'capnhat.json', function (err, txt) {
             setStatus(err ? 'Không tải được ghi chú: ' + err : '', !!err);
             try { lastInfo = JSON.parse(txt.replace(/^\uFEFF/, '')); } catch (e) {}
             go(lastInfo);
-        });
+        }); });
     }
 
     // ---- Phiên bản & cập nhật ----
@@ -267,6 +271,14 @@
         x.ontimeout = function () { cb('Hết thời gian chờ khi tải ' + url); };
         x.send();
     }
+    function resolveBase(cb) {
+        httpGet('https://api.github.com/repos/' + REPO + '/commits/main', function (err, txt) {
+            var sha = null;
+            if (!err) { try { sha = JSON.parse(txt).sha; } catch (e) {} }
+            activeBase = sha ? 'https://raw.githubusercontent.com/' + REPO + '/' + sha + '/' : UPDATE_BASE;
+            cb();
+        });
+    }
     function hostCall(fn, args, cb) {
         evalHost(fn + '(' + args.map(function (a) { return '"' + encodeURIComponent(a) + '"'; }).join(',') + ')', cb);
     }
@@ -277,7 +289,7 @@
 
     // Đọc capnhat.json, trả về danh sách việc cần làm
     function checkUpdates(cb) {
-        httpGet(UPDATE_BASE + 'capnhat.json', function (err, txt) {
+        resolveBase(function () { httpGet(activeBase + 'capnhat.json', function (err, txt) {
             if (err) return cb(/Lỗi 404/.test(err) ? 'Kho GitHub chưa có bản cập nhật nào.' : err);
             var info;
             try { info = JSON.parse(txt.replace(/^\uFEFF/, '')); } catch (e) { return cb('File capnhat.json bị lỗi'); }
@@ -300,7 +312,7 @@
                 });
             });
             cb(null, jobs, info);
-        });
+        }); });
     }
 
     function runUpdate() {
@@ -321,8 +333,8 @@
             // 1) tải hết về trước, 2) rồi mới ghi đè (tránh hỏng giữa chừng)
             var downloads = [];
             jobs.forEach(function (j) {
-                if (j.kind === 'tool') downloads.push({ url: UPDATE_BASE + '2_ThuMucTool/' + j.src, dest: j.dest });
-                else j.files.forEach(function (f) { downloads.push({ url: UPDATE_BASE + '1_CaiPanel/com.phuc.toollauncher/' + f, dest: extensionPath() + '/' + f, panel: true }); });
+                if (j.kind === 'tool') downloads.push({ url: activeBase + '2_ThuMucTool/' + j.src, dest: j.dest });
+                else j.files.forEach(function (f) { downloads.push({ url: activeBase + '1_CaiPanel/com.phuc.toollauncher/' + f, dest: extensionPath() + '/' + f, panel: true }); });
             });
             var i = 0;
             (function next() {
