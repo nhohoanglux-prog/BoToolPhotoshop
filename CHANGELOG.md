@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- Panel Tool Launcher v1.5.0: bấm tool thì bảng tự ẩn cho đỡ che màn hình, tool chạy xong bảng tự hiện lại. Tắt được bằng ô "Tự ẩn bảng khi chạy tool" ở cuối bảng. Cần tắt và mở lại Photoshop một lần sau khi cập nhật.
 - SoTrangTuDong.jsx v1.2.1: sửa tiếp lỗi số ở trang trái nằm giữa: số được tạo sẵn ở đúng góc và canh lề ngay từ đầu, dời bằng cách khác rồi tự kiểm tra lại; nếu còn lệch tool báo và ghi nhật ký SoTrang_nhatky.txt ra Desktop để gửi lại.
 - DanhSoArtboard.jsx v1.1.0: có khung tiến độ và nút "Dừng" (hoặc Esc) khi đang đánh số; dừng là trả file về y như cũ.
 - XuatArtboardNen.jsx v1.6.0: nút "Dừng" (hoặc Esc) trong khung tiến độ khi đang xuất; dừng là hủy ngay, không để lại file xuất dở, file PSD vẫn nguyên.

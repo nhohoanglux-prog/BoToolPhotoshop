@@ -1,12 +1,14 @@
 {
   "panel": {
-    "version": "1.4.0",
+    "version": "1.5.0",
     "date": "2026-11-25",
-    "notes": "Bản mới hiện ngay sau khi đưa lên, không phải chờ ~5 phút như trước (panel hỏi GitHub mã bản mới nhất rồi tải đúng bản đó).",
+    "notes": "Bấm tool thì bảng tự ẩn cho đỡ che màn hình, tool chạy xong bảng tự hiện lại. Tắt được bằng ô \"Tự ẩn bảng khi chạy tool\" ở cuối bảng. Cần tắt và mở lại Photoshop một lần sau khi cập nhật.",
     "files": [
       "CSXS/manifest.xml",
+      "bg.html",
       "css/style.css",
       "index.html",
+      "js/bg.js",
       "js/main.js",
       "jsx/host.jsx"
     ]
@@ -51,6 +53,10 @@
   "news": [
     {
       "date": "2026-11-25",
+      "text": "Panel Tool Launcher v1.5.0: bấm tool thì bảng tự ẩn cho đỡ che màn hình, tool chạy xong bảng tự hiện lại. Tắt được bằng ô \"Tự ẩn bảng khi chạy tool\" ở cuối bảng. Cần tắt và mở lại Photoshop một lần sau khi cập nhật."
+    },
+    {
+      "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.2.1: sửa tiếp lỗi số ở trang trái nằm giữa: số được tạo sẵn ở đúng góc và canh lề ngay từ đầu, dời bằng cách khác rồi tự kiểm tra lại; nếu còn lệch tool báo và ghi nhật ký SoTrang_nhatky.txt ra Desktop để gửi lại."
     },
     {
@@ -84,10 +90,6 @@
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.6.0: hộp thoại gọn hơn nhiều (bỏ khung minh hoạ to, gom chữ hướng dẫn vào nút \"?\", các nút xếp sát nhau); lần đầu mở nằm sát bên phải màn hình, thanh tiêu đề luôn nằm trong màn hình để kéo được; nhớ vị trí bạn kéo tới cho lần sau."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "CheDoNhe.jsx v1.0.0: tool mới \"Chế độ nhẹ\" giúp bớt lag: tạm thay ảnh Smart Object bằng bản nhẹ theo % bạn chọn (thanh trượt), kích thước và vị trí giữ nguyên, ảnh gốc được cất ở thư mục cạnh file; xem RAM Photoshop đang dùng và RAM dự kiến sau khi làm nhẹ; giữ nét artboard đang chọn, nút \"Làm nét artboard đang chọn\" để đổi sang trang khác; \"Trả về đầy đủ tất cả\" để lấy lại ảnh gốc."
     }
   ]
 }

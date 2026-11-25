@@ -11,6 +11,8 @@
 
 DÙNG
 - Gõ tìm (không dấu cũng được), bấm vào tool là chạy.
+- Bấm tool thì bảng tự ẩn cho đỡ che màn hình, tool chạy xong bảng tự hiện lại
+  (bỏ tick "Tự ẩn bảng khi chạy tool" ở cuối bảng nếu không muốn).
 - Mỗi tool ghi phiên bản (v1.0.0) và ngày cập nhật. Cuối bảng ghi phiên bản của panel.
 - Nút "⬇ Cập nhật": bấm một lần là tải bản mới của panel và các tool về.
   Khi có bản mới, nút này chuyển màu xanh và hiện số lượng.

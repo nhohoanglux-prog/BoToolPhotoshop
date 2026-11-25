@@ -26,6 +26,7 @@ HuongDan.txt                      hướng dẫn cài 5 bước (UTF-8 có BOM, 
 - Hiện phiên bản/ngày của từng tool; cuối bảng hiện phiên bản panel.
 - Cập nhật: so `capnhat.json` với phiên bản tại máy, tải hết rồi mới ghi đè (qua `TL_writeFile` trong host.jsx, .jsx ghi kèm BOM). Tool khớp theo tên file. Panel cập nhật thì tự tải lại.
 - Khi Photoshop đang Transform/mở hộp thoại, evalScript xếp hàng chờ: sau 3 giây panel báo "Photoshop đang bận" và tự chạy tiếp; chỉ so phiên bản tool sau khi quét xong thư mục (tránh ghi nhầm "tool mới").
+- Tự ẩn khi chạy tool (v1.5.0, mặc định bật, ô "Tự ẩn bảng khi chạy tool", localStorage tl.autoHide): manifest có thêm extension ẩn `com.phuc.toollauncher.bg` (bg.html/js/bg.js, Type Custom, StartOn applicationActivate; panel cũng requestOpenExtension nó). Bắt tay run → ack → go: bảng gửi run, bg trả ack, bảng gửi go rồi closeExtension; bg chạy `$.evalFile` trong engine của nó, xong thì requestOpenExtension lại bảng (lỗi thì alert). Không có ack trong 1,2 giây (chưa khởi động lại Photoshop sau khi thêm extension) thì chạy ngay trong bảng như cũ, không bao giờ chạy 2 lần. CHƯA kiểm chứng trên Photoshop thật.
 - Người dùng đã chạy panel trên Photoshop thật (v1.2.0 hoạt động).
 
 ## Quy ước đầu file mỗi tool (bắt buộc, lưu UTF-8 có BOM)
