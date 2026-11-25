@@ -22,9 +22,9 @@
     {
       "path": "XoayIsometric.jsx",
       "name": "Xoay ảnh Isometric",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "date": "2026-11-25",
-      "notes": "Không tự xem trước nữa, chọn xong bấm \"Xem trước\" mới hiện (vẫn bật lại được ô \"Tự xem trước mỗi khi đổi\"); thêm nút đổi chỗ ảnh giữa các mặt (Trên ⇄ Trái, Trái ⇄ Phải, Trên ⇄ Phải, Xoay vòng 3 ảnh); mỗi mặt có nút \"Xoay ↻\" 90° và ô \"Lật\"; thẻ Xoay 1 ảnh có thêm ô \"Lật ngang\"."
+      "notes": "Khối hộp bớt cắt ảnh: thêm ô \"Khối theo tỉ lệ ảnh\" (bật sẵn, 2 mặt tường giữ trọn ảnh); ảnh gốc vẫn nguyên trong Smart Object và mask không dính vào ảnh nữa, nên dựng xong bạn dùng Move tool (V) kéo ảnh qua lại để chọn phần muốn hiện, khung mặt đứng yên."
     },
     {
       "path": "XuatArtboardNen.jsx",
@@ -35,6 +35,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "XoayIsometric.jsx v1.4.0: khối hộp bớt cắt ảnh: thêm ô \"Khối theo tỉ lệ ảnh\" (bật sẵn, 2 mặt tường giữ trọn ảnh); ảnh gốc vẫn nguyên trong Smart Object và mask không dính vào ảnh nữa, nên dựng xong bạn dùng Move tool (V) kéo ảnh qua lại để chọn phần muốn hiện, khung mặt đứng yên."
+    },
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.3.0: không tự xem trước nữa, chọn xong bấm \"Xem trước\" mới hiện (vẫn bật lại được ô \"Tự xem trước mỗi khi đổi\"); thêm nút đổi chỗ ảnh giữa các mặt (Trên ⇄ Trái, Trái ⇄ Phải, Trên ⇄ Phải, Xoay vòng 3 ảnh); mỗi mặt có nút \"Xoay ↻\" 90° và ô \"Lật\"; thẻ Xoay 1 ảnh có thêm ô \"Lật ngang\"."
@@ -70,10 +74,6 @@
     {
       "date": "2026-11-25",
       "text": "XuatArtboardNen.jsx v1.2.0: nút \"Chất lượng cao nhất\" giờ luôn xuất 300 DPI, chất lượng 12, không giới hạn dung lượng, chỉ 1 lần. Khi có giới hạn MB, script ước tính trước bằng vài trang mẫu nên thường chỉ xuất 1 lần, nhanh hơn nhiều."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "Panel Tool Launcher v1.2.0: thêm khung \"Có gì mới\" (hiện ghi chú trước khi cập nhật và sau khi cập nhật xong), nhãn MỚI cho tool vừa thêm hoặc vừa cập nhật, link \"Có gì mới\" ở cuối bảng."
     }
   ]
 }
