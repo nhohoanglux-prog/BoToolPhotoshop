@@ -1,6 +1,8 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- CheDoNhe.jsx v1.0.0: tool mới "Chế độ nhẹ" giúp bớt lag: tạm thay ảnh Smart Object bằng bản nhẹ theo % bạn chọn (thanh trượt), kích thước và vị trí giữ nguyên, ảnh gốc được cất ở thư mục cạnh file; xem RAM Photoshop đang dùng và RAM dự kiến sau khi làm nhẹ; giữ nét artboard đang chọn, nút "Làm nét artboard đang chọn" để đổi sang trang khác; "Trả về đầy đủ tất cả" để lấy lại ảnh gốc.
+- XuatArtboardNen.jsx v1.5.0: báo trước nếu file đang ở chế độ nhẹ (ảnh mờ), để bạn trả về đầy đủ rồi mới xuất.
 - XoayIsometric.jsx v1.5.0: thêm ô "Khóa khối" (bật sẵn): dựng xong 3 layer được liên kết với nhau và mask dính với ảnh, kéo 1 mặt là cả khối đi theo. Muốn dịch ảnh trong 1 mặt thì bấm tắt biểu tượng xích giữa ảnh và mask, kéo xong bấm lại.
 - XoayIsometric.jsx v1.4.0: khối hộp bớt cắt ảnh: thêm ô "Khối theo tỉ lệ ảnh" (bật sẵn, 2 mặt tường giữ trọn ảnh); ảnh gốc vẫn nguyên trong Smart Object và mask không dính vào ảnh nữa, nên dựng xong bạn dùng Move tool (V) kéo ảnh qua lại để chọn phần muốn hiện, khung mặt đứng yên.
 - XoayIsometric.jsx v1.3.0: không tự xem trước nữa, chọn xong bấm "Xem trước" mới hiện (vẫn bật lại được ô "Tự xem trước mỗi khi đổi"); thêm nút đổi chỗ ảnh giữa các mặt (Trên ⇄ Trái, Trái ⇄ Phải, Trên ⇄ Phải, Xoay vòng 3 ảnh); mỗi mặt có nút "Xoay ↻" 90° và ô "Lật"; thẻ Xoay 1 ảnh có thêm ô "Lật ngang".

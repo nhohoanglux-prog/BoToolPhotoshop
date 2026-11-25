@@ -13,6 +13,13 @@
   },
   "tools": [
     {
+      "path": "CheDoNhe.jsx",
+      "name": "Chế độ nhẹ (bớt lag khi dàn trang)",
+      "version": "1.0.0",
+      "date": "2026-11-25",
+      "notes": "Tool mới \"Chế độ nhẹ\" giúp bớt lag: tạm thay ảnh Smart Object bằng bản nhẹ theo % bạn chọn (thanh trượt), kích thước và vị trí giữ nguyên, ảnh gốc được cất ở thư mục cạnh file; xem RAM Photoshop đang dùng và RAM dự kiến sau khi làm nhẹ; giữ nét artboard đang chọn, nút \"Làm nét artboard đang chọn\" để đổi sang trang khác; \"Trả về đầy đủ tất cả\" để lấy lại ảnh gốc."
+    },
+    {
       "path": "DanhSoArtboard.jsx",
       "name": "Đánh số Artboard",
       "version": "1.0.0",
@@ -29,12 +36,20 @@
     {
       "path": "XuatArtboardNen.jsx",
       "name": "Xuất artboard nén theo dung lượng",
-      "version": "1.4.0",
+      "version": "1.5.0",
       "date": "2026-11-25",
-      "notes": "Thêm ô \"Tên file\" (để trống thì dùng tên file PSD). Xuất có giới hạn MB giờ chỉ xuất 1 lần; nếu vẫn lố thì hỏi bạn có muốn xuất lại nhỏ hơn không, không tự thử lại."
+      "notes": "Báo trước nếu file đang ở chế độ nhẹ (ảnh mờ), để bạn trả về đầy đủ rồi mới xuất."
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "CheDoNhe.jsx v1.0.0: tool mới \"Chế độ nhẹ\" giúp bớt lag: tạm thay ảnh Smart Object bằng bản nhẹ theo % bạn chọn (thanh trượt), kích thước và vị trí giữ nguyên, ảnh gốc được cất ở thư mục cạnh file; xem RAM Photoshop đang dùng và RAM dự kiến sau khi làm nhẹ; giữ nét artboard đang chọn, nút \"Làm nét artboard đang chọn\" để đổi sang trang khác; \"Trả về đầy đủ tất cả\" để lấy lại ảnh gốc."
+    },
+    {
+      "date": "2026-11-25",
+      "text": "XuatArtboardNen.jsx v1.5.0: báo trước nếu file đang ở chế độ nhẹ (ảnh mờ), để bạn trả về đầy đủ rồi mới xuất."
+    },
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.5.0: thêm ô \"Khóa khối\" (bật sẵn): dựng xong 3 layer được liên kết với nhau và mask dính với ảnh, kéo 1 mặt là cả khối đi theo. Muốn dịch ảnh trong 1 mặt thì bấm tắt biểu tượng xích giữa ảnh và mask, kéo xong bấm lại."
@@ -66,14 +81,6 @@
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.0.0: tool mới \"Xoay ảnh Isometric\": biến ảnh phẳng thành mặt trên / mặt trái / mặt phải theo 10 kiểu góc (isometric 30°, dimetric, trục đo 45°, 30/60, cavalier, cabinet…), giữ Smart Object để sửa lại được, và nút \"Dựng khối hộp\" từ 3 ảnh."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "XuatArtboardNen.jsx v1.4.0: thêm ô \"Tên file\" (để trống thì dùng tên file PSD). Xuất có giới hạn MB giờ chỉ xuất 1 lần; nếu vẫn lố thì hỏi bạn có muốn xuất lại nhỏ hơn không, không tự thử lại."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "XuatArtboardNen.jsx v1.3.0: xuất xong có nút \"Mở thư mục chứa file\" (mở File Explorer, tô sẵn file vừa xuất) và nút \"Mở file PDF\" / \"Mở ảnh đầu tiên\"."
     }
   ]
 }

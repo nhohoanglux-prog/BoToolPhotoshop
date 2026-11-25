@@ -3,7 +3,7 @@
   @name: Xuất artboard nén theo dung lượng
   @group: Xuất file
   @desc: Xuất tất cả artboard theo thứ tự trang ra PDF, JPG hoặc PNG, tự nén cho tổng dung lượng vừa giới hạn MB.
-  @version: 1.4.0
+  @version: 1.5.0
   @date: 2026-11-25
 
   XuatArtboardNen.jsx
@@ -520,9 +520,32 @@ function showResult(msg, saved, isPdf) {
 }
 
 // ---------- Chạy ----------
+// ---------- Kiểm tra Chế độ nhẹ (CheDoNhe.jsx đặt tên ảnh nhẹ bắt đầu bằng NHE__) ----------
+function countLightLayers() {
+    var n = 0;
+    try {
+        var ref = new ActionReference();
+        ref.putProperty(c('Prpr'), c('NmbL'));
+        ref.putEnumerated(c('Dcmn'), c('Ordn'), c('Trgt'));
+        var count = executeActionGet(ref).getInteger(c('NmbL'));
+        for (var i = 1; i <= count; i++) {
+            var r = new ActionReference(); r.putIndex(c('Lyr '), i);
+            var d; try { d = executeActionGet(r); } catch (e) { continue; }
+            if (!d.hasKey(s('smartObject'))) continue;
+            var so = d.getObjectValue(s('smartObject'));
+            if (so.hasKey(s('fileReference')) && /^NHE__\d+__/.test(so.getString(s('fileReference')))) n++;
+        }
+    } catch (e2) { }
+    return n;
+}
+
 (function main() {
     if (!app.documents.length) { alert('Chưa mở file nào.'); return; }
     var doc = app.activeDocument;
+    var nLight = countLightLayers();
+    if (nLight && !confirm('File đang ở CHẾ ĐỘ NHẸ: ' + nLight + ' ảnh đang là bản nhẹ, xuất bây giờ ảnh sẽ bị mờ.\n\n' +
+                           'Không = dừng lại. Mở tool "Chế độ nhẹ", bấm "Trả về đầy đủ tất cả" rồi xuất lại.\n' +
+                           'Có = vẫn xuất (bản nháp, ảnh mờ).')) return;
     var docName = doc.name.replace(/\.[^.]+$/, '');
     var folder = Folder.desktop.fsName;
     try { folder = doc.path.fsName; } catch (e) {}
