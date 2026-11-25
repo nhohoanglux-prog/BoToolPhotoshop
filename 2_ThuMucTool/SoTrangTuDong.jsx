@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), chọn vị trí riêng cho trang chẵn / lẻ; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.6.0
+  @version: 1.7.0
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.6.0';
+var TOOL_VERSION = '1.7.0';
 var TAG = '[Số trang]';
 var LOG = [], STEPS = [], DIAG = '';   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
 var c = function (x) { return charIDToTypeID(x); };
@@ -170,7 +170,7 @@ function defaultStyle(arts) {
     return {
         styleIdx: 0, tpl: '{so}', posEven: 6, posOdd: 8,
         mx: Math.max(10, Math.round(minSide * 0.04)), my: Math.max(10, Math.round(minSide * 0.03)),
-        font: pickDefaultFont(), size: Math.max(8, Math.round(minSide * 0.018)), color: '333333',
+        font: pickDefaultFont(), size: Math.max(8, Math.round(minSide * 0.018)), color: '333333', colorAuto: true,
         fromPage: 2, start: 2, skipLast: false, skipList: '', pad: true
     };
 }
@@ -328,6 +328,14 @@ function applyAll(st, arts, fxFromId, limit) {
             b = b2;
         }
         STEPS = moves.slice(0);
+        // v1.7.0: màu tự động theo nền ngay chỗ đặt số (nền sáng -> chữ đen, nền tối -> chữ trắng)
+        if (st.colorAuto) {
+            var lum = bgLuminance(doc, lyr, b, st.size);
+            if (lum != null) {
+                ti.color = hexToColor(lum >= AUTO_THRESHOLD ? '000000' : 'FFFFFF');
+                LOG.push('    nền sáng ' + Math.round(lum) + '/255 -> chữ ' + (lum >= AUTO_THRESHOLD ? 'đen' : 'trắng'));
+            }
+        }
         var aligned = false;
         var lw2 = b.R - b.L;
         var want = h == 0 ? ab.left + st.mx : (h == 1 ? ab.left + (ab.w - lw2) / 2 : ab.left + ab.w - st.mx - lw2);
@@ -436,6 +444,22 @@ function alignInArtboard(lyr, h, v, mx, my) {
         STEPS.push('dời lề ' + fm(measureLayer(lyr)));
         return true;
     } catch (e) { return false; }
+}
+// Độ sáng trung bình của nền (các layer khác) trong vùng quanh số trang, 0..255. Ẩn số trang tạm để không đo chính nó.
+var AUTO_THRESHOLD = 140;
+function bgLuminance(doc, lyr, b, size) {
+    var pad = Math.max(6, Math.round(size * 0.5)), was = true, res = null;
+    try { was = lyr.visible; lyr.visible = false; } catch (e) { }
+    try {
+        var L = b.L - pad, T = b.T - pad, Rr = b.R + pad, B = b.B + pad;
+        doc.selection.select([[L, T], [Rr, T], [Rr, B], [L, B]]);
+        var hst = doc.histogram, sum = 0, n = 0;
+        for (var i = 0; i < hst.length; i++) { sum += i * hst[i]; n += hst[i]; }
+        if (n > 0) res = sum / n;
+    } catch (e) { res = null; }
+    try { doc.selection.deselect(); } catch (e) { }
+    try { lyr.visible = was; } catch (e) { }
+    return res;
 }
 function fmtB(b) { return b ? 'x ' + Math.round(b.L) + '..' + Math.round(b.R) + ', y ' + Math.round(b.T) + '..' + Math.round(b.B) : 'không đọc được'; }
 // Vùng điểm ảnh thật của layer (chọn theo độ trong suốt của layer rồi đọc khung vùng chọn)
@@ -606,6 +630,7 @@ function styleFromActive(st, arts) {
         try { o.font = ti.font; } catch (e) { }
         try { o.size = Math.round(ti.size.as('pt') * res / 72); } catch (e) { }
         try { o.color = colorToHex(ti.color); } catch (e) { }
+        o.colorAuto = (o.color == '000000' || o.color == 'FFFFFF') ? null : false;   // màu riêng thì tắt tự động
         // Vị trí: tìm artboard chứa layer, suy ra góc + lề
         var top = l.parent;
         while (top && top.parent && top.parent.typename == 'LayerSet') top = top.parent;
@@ -683,6 +708,7 @@ var HELP = 'SỐ TRANG TỰ ĐỘNG\n\n' +
     '• Muốn đổi kiểu: chạy lại tool, sửa 1 chỗ, bấm "Cập nhật tất cả" là tất cả đổi theo. Kiểu được lưu ngay trong file PSD.\n' +
     '• Thêm / bớt / dời artboard: chạy lại tool, bấm "Cập nhật tất cả" là số tự đánh lại.\n' +
     '• Sửa tay 1 số trang (font, cỡ, màu, hiệu ứng, kéo sang chỗ khác) rồi CHỌN layer đó và chạy tool: tool lấy kiểu + vị trí của nó, bấm "Cập nhật tất cả" là mọi trang theo (trang trái tự đối xứng).\n' +
+    '• Màu "Tự động" (bật sẵn): tool đo nền ngay chỗ đặt số trên từng trang, nền sáng thì số đen, nền tối thì số trắng. Tắt ô này để dùng 1 màu cố định.\n' +
     '• Mẫu chữ: {so} = số trang, {tong} = tổng số trang, {ten} = tên artboard. Ví dụ: "Trang {so} / {tong}".\n' +
     '• "Gắn số từ trang thứ 2, mang số 2" = bìa không hiện số nhưng vẫn tính là trang 1. Muốn bìa không tính: để "mang số 1".\n' +
     '• Bỏ: gõ vị trí trang không muốn hiện số, ví dụ "5, 10-12" (vẫn được tính).\n' +
@@ -733,6 +759,10 @@ function showDialog(st, arts, fromActive) {
     var eCol = r3.add('edittext', undefined, st.color); eCol.characters = 6;
     var sw = r3.add('group'); sw.preferredSize = [22, 18];
     var bCol = r3.add('button', undefined, '…'); bCol.preferredSize = [26, 22]; bCol.helpTip = 'Bảng chọn màu';
+    var cbAuto = r3.add('checkbox', undefined, 'Tự động'); cbAuto.value = st.colorAuto;
+    cbAuto.helpTip = 'Nền sáng thì số màu đen, nền tối thì số màu trắng (đo nền ngay chỗ đặt số trên từng trang)';
+    function syncAuto() { eCol.enabled = bCol.enabled = !cbAuto.value; }
+    cbAuto.onClick = syncAuto; syncAuto();
 
     // Hàng 4: trang bỏ qua + bắt đầu
     var r4 = row();
@@ -771,7 +801,7 @@ function showDialog(st, arts, fromActive) {
         return {
             styleIdx: ddStyle.selection.index, tpl: eTpl.text || '{so}', posEven: ddEven.selection.index, posOdd: ddOdd.selection.index,
             mx: intOf(eMx, st.mx, 0), my: intOf(eMy, st.my, 0),
-            font: eFont.text.replace(/^\s+|\s+$/g, ''), size: intOf(eSize, st.size, 1), color: cleanHex(eCol.text) || st.color,
+            font: eFont.text.replace(/^\s+|\s+$/g, ''), size: intOf(eSize, st.size, 1), color: cleanHex(eCol.text) || st.color, colorAuto: cbAuto.value,
             fromPage: Math.min(arts.length, intOf(eFrom, 1, 1)), start: intOf(eStart, 1, 0), skipLast: cbLast.value, skipList: eSkip.text, pad: cbPad.value
         };
     }
@@ -890,6 +920,7 @@ function main() {
         var fromActive = styleFromActive(st, arts);
         if (fromActive) {
             st.font = fromActive.font; st.size = fromActive.size; st.color = fromActive.color;
+            if (fromActive.colorAuto === false) st.colorAuto = false;
             if (fromActive.pos != null) {
                 if (fromActive.even) st.posEven = fromActive.pos; else st.posOdd = fromActive.pos;
                 st.mx = fromActive.mx; st.my = fromActive.my;

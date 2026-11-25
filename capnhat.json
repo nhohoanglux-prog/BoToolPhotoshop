@@ -31,9 +31,9 @@
     {
       "path": "SoTrangTuDong.jsx",
       "name": "Số trang tự động",
-      "version": "1.6.0",
+      "version": "1.7.0",
       "date": "2026-11-25",
-      "notes": "ĐÃ TÌM RA lỗi số trang trái nằm giữa: Photoshop hiểu sai một kiểu câu lệnh chọn trái/giữa/phải nên \"trái\" bị đọc thành \"giữa\". Đã sửa, số trang chẵn giờ nằm đúng góc trái; bỏ bảng thông tin kiểm tra."
+      "notes": "Màu số \"Tự động\" (bật sẵn): đo nền ngay chỗ đặt số trên từng trang, nền sáng thì số đen, nền tối thì số trắng; tắt ô \"Tự động\" để dùng 1 màu cố định như cũ."
     },
     {
       "path": "XoayIsometric.jsx",
@@ -51,6 +51,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "SoTrangTuDong.jsx v1.7.0: màu số \"Tự động\" (bật sẵn): đo nền ngay chỗ đặt số trên từng trang, nền sáng thì số đen, nền tối thì số trắng; tắt ô \"Tự động\" để dùng 1 màu cố định như cũ."
+    },
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.6.0: ĐÃ TÌM RA lỗi số trang trái nằm giữa: Photoshop hiểu sai một kiểu câu lệnh chọn trái/giữa/phải nên \"trái\" bị đọc thành \"giữa\". Đã sửa, số trang chẵn giờ nằm đúng góc trái; bỏ bảng thông tin kiểm tra."
@@ -86,10 +90,6 @@
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.3.0: đổi hẳn cách đặt số: dùng lệnh Align của Photoshop canh theo chính artboard (như bấm canh trái/phải, canh dưới) rồi dời vào đúng lề, nên số ở trang trái phải nằm góc trái."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "Panel Tool Launcher v1.5.0: bấm tool thì bảng tự ẩn cho đỡ che màn hình, tool chạy xong bảng tự hiện lại. Tắt được bằng ô \"Tự ẩn bảng khi chạy tool\" ở cuối bảng. Cần tắt và mở lại Photoshop một lần sau khi cập nhật."
     }
   ]
 }
