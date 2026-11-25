@@ -3,7 +3,7 @@
   @name: Xoay ảnh Isometric
   @group: Hình chiếu trục đo
   @desc: Biến ảnh phẳng thành mặt trên / mặt trái / mặt phải theo góc isometric, dimetric, 45°, 30/60, cavalier… (giữ Smart Object) và dựng khối hộp từ 3 ảnh.
-  @version: 1.2.0
+  @version: 1.3.0
   @date: 2026-11-25
 
   XoayIsometric.jsx
@@ -16,7 +16,7 @@
   Dùng cho Photoshop 2021/2022 trở lên. CHƯA thử trên Photoshop thật.
 */
 
-var TOOL_VERSION = '1.2.0';
+var TOOL_VERSION = '1.3.0';
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
 
@@ -73,6 +73,7 @@ function rotLocal(deg) { // xoay ảnh trong mặt, theo chiều kim đồng h�
     var k = Math.round(deg / 90) % 4;
     return [[1, 0, 0, 1], [0, -1, 1, 0], [-1, 0, 0, -1], [0, 1, -1, 0]][k];
 }
+function flipLocal(on) { return on ? [-1, 0, 0, 1] : [1, 0, 0, 1]; } // lật ngang ảnh
 function len(v) { return Math.sqrt(v[0] * v[0] + v[1] * v[1]); }
 
 // ---------------------------------------------------------------------------
@@ -407,7 +408,7 @@ function groupLayers(ids, name) {
 // Hai chức năng chính
 // ---------------------------------------------------------------------------
 function runFace(opt) {
-    var p = PRESETS[opt.preset], P = mul(faceMatrix(p, opt.face), rotLocal(opt.rot));
+    var p = PRESETS[opt.preset], P = mul(faceMatrix(p, opt.face), mul(rotLocal(opt.rot), flipLocal(opt.flip)));
     var id = opt.layer;
     if (opt.keep) {
         selectLayerByID(id);
@@ -446,7 +447,10 @@ function runCube(opt) {
     var orderF = ['top', 'left', 'right'];
     for (var n = 0; n < orderF.length; n++) {
         var f = orderF[n], fc = faces[f];
-        var r = applyFace(opt.layers[f], faceMatrix(p, f), { w: fc.w, h: fc.hh }, centerOf(fc.q));
+        var fr = (opt.frot && opt.frot[f]) || 0, ff = !!(opt.fflip && opt.fflip[f]);
+        var Pf = mul(faceMatrix(p, f), mul(rotLocal(fr), flipLocal(ff)));
+        var odd = Math.round(fr / 90) % 2 == 1; // xoay 90/270: chiều ngang ảnh nằm theo chiều cao mặt
+        var r = applyFace(opt.layers[f], Pf, odd ? { w: fc.hh, h: fc.w } : { w: fc.w, h: fc.hh }, centerOf(fc.q));
         if (r.warn) warns.push(FACE_LABEL[f] + ': ' + r.warn);
         maskToQuad(fc.q);
         ids.push(r.id);
@@ -459,12 +463,13 @@ function runCube(opt) {
 // Hộp thoại (có xem trước trực tiếp trên ảnh)
 // ---------------------------------------------------------------------------
 function loadPrefs() {
-    var o = { preset: 0, rot: 0, keep: false, a: 0, b: 0, h: 0, live: true, face: 'left', pct: 100 };
+    var o = { preset: 0, rot: 0, keep: false, a: 0, b: 0, h: 0, live: false, face: 'left', pct: 100, flip: false };
     try {
         var d = app.getCustomOptions('XoayIsometric_prefs');
         o.preset = d.getInteger(s('preset')); o.rot = d.getInteger(s('rot')); o.keep = d.getBoolean(s('keep'));
         o.a = d.getInteger(s('a')); o.b = d.getInteger(s('b')); o.h = d.getInteger(s('h'));
-        if (d.hasKey(s('live'))) o.live = d.getBoolean(s('live'));
+        if (d.hasKey(s('live2'))) o.live = d.getBoolean(s('live2'));
+        if (d.hasKey(s('flip'))) o.flip = d.getBoolean(s('flip'));
         if (d.hasKey(s('face'))) o.face = d.getString(s('face'));
         if (d.hasKey(s('pct'))) o.pct = d.getInteger(s('pct'));
         if (!(o.pct >= 10 && o.pct <= 200)) o.pct = 100;
@@ -477,7 +482,7 @@ function savePrefs(o) {
         var d = new ActionDescriptor();
         d.putInteger(s('preset'), o.preset); d.putInteger(s('rot'), o.rot); d.putBoolean(s('keep'), o.keep);
         d.putInteger(s('a'), o.a); d.putInteger(s('b'), o.b); d.putInteger(s('h'), o.h);
-        d.putBoolean(s('live'), o.live); d.putString(s('face'), o.face || 'left'); d.putInteger(s('pct'), o.pct || 100);
+        d.putBoolean(s('live2'), o.live); d.putBoolean(s('flip'), !!o.flip); d.putString(s('face'), o.face || 'left'); d.putInteger(s('pct'), o.pct || 100);
         app.putCustomOptions('XoayIsometric_prefs', d, true);
     } catch (e) { }
 }
@@ -539,13 +544,39 @@ function showDialog(prefs, layers, selIds) {
     var g2 = t1.add('group');
     g2.add('statictext', undefined, 'Xoay ảnh trong mặt:');
     var ddRot = g2.add('dropdownlist', undefined, ['0°', '90°', '180°', '270°']); ddRot.selection = Math.round(prefs.rot / 90) % 4;
-    var cbKeep = g2.add('checkbox', undefined, 'Giữ bản gốc (nhân bản rồi ẩn bản gốc)'); cbKeep.value = prefs.keep;
+    var cbFlip = g2.add('checkbox', undefined, 'Lật ngang'); cbFlip.value = prefs.flip;
+    var cbKeep = t1.add('checkbox', undefined, 'Giữ bản gốc (nhân bản rồi ẩn bản gốc)'); cbKeep.value = prefs.keep;
     t1.add('statictext', undefined, 'Chỉ ảnh đã chọn ở trên bị xoay, các layer khác giữ nguyên.');
 
     // Thẻ 2: khối hộp
-    var ddT = layerPicker(t2, 'Mặt trên:', selIds[0]);
-    var ddL = layerPicker(t2, 'Mặt trái:', selIds[1] || selIds[0]);
-    var ddR = layerPicker(t2, 'Mặt phải:', selIds[2] || selIds[0]);
+    function facePicker(label, def) {
+        var d = layerPicker(t2, label, def), g = d.parent;
+        d.preferredSize.width = 230;
+        var b = g.add('button', undefined, 'Xoay ↻'); b.preferredSize.width = 60;
+        var tr = g.add('statictext', undefined, '0°'); tr.preferredSize.width = 34;
+        var fl = g.add('checkbox', undefined, 'Lật');
+        var o = { dd: d, rot: 0, rotBtn: b, rotTxt: tr, flip: fl };
+        b.onClick = function () { o.rot = (o.rot + 90) % 360; tr.text = o.rot + '°'; changed(); };
+        fl.onClick = function () { changed(); };
+        return o;
+    }
+    var fT = facePicker('Mặt trên:', selIds[0]);
+    var fL = facePicker('Mặt trái:', selIds[1] || selIds[0]);
+    var fR = facePicker('Mặt phải:', selIds[2] || selIds[0]);
+    var ddT = fT.dd, ddL = fL.dd, ddR = fR.dd;
+    // Đổi chỗ ảnh giữa các mặt (đổi luôn góc xoay / lật đi kèm ảnh)
+    function swap(x, y) {
+        var si = x.dd.selection ? x.dd.selection.index : 0, sj = y.dd.selection ? y.dd.selection.index : 0;
+        x.dd.selection = sj; y.dd.selection = si;
+        var r = x.rot; x.rot = y.rot; y.rot = r; x.rotTxt.text = x.rot + '°'; y.rotTxt.text = y.rot + '°';
+        var f = x.flip.value; x.flip.value = y.flip.value; y.flip.value = f;
+        changed();
+    }
+    var gw = t2.add('group'); gw.add('statictext', undefined, 'Đổi chỗ ảnh:');
+    gw.add('button', undefined, 'Trên ⇄ Trái').onClick = function () { swap(fT, fL); };
+    gw.add('button', undefined, 'Trái ⇄ Phải').onClick = function () { swap(fL, fR); };
+    gw.add('button', undefined, 'Trên ⇄ Phải').onClick = function () { swap(fT, fR); };
+    gw.add('button', undefined, 'Xoay vòng 3 ảnh').onClick = function () { swap(fT, fL); swap(fL, fR); };
     var gs = t2.add('group');
     function num(label, v) { gs.add('statictext', undefined, label); var e = gs.add('edittext', undefined, String(v)); e.characters = 6; return e; }
     var eA = num('Dài (trục phải):', 0), eB = num('Rộng (trục trái):', 0), eH = num('Cao:', 0);
@@ -581,7 +612,7 @@ function showDialog(prefs, layers, selIds) {
 
     // --- Xem trước + nút
     var gp = w.add('group'); gp.alignment = 'fill';
-    var cbLive = gp.add('checkbox', undefined, 'Xem trước trực tiếp trên ảnh'); cbLive.value = prefs.live;
+    var cbLive = gp.add('checkbox', undefined, 'Tự xem trước mỗi khi đổi'); cbLive.value = prefs.live;
     var bPrev = gp.add('button', undefined, 'Xem trước');
     var status = w.add('statictext', undefined, ' ', { multiline: true }); status.preferredSize = [460, 34];
     var gEnd = w.add('group'); gEnd.alignment = 'right';
@@ -592,7 +623,9 @@ function showDialog(prefs, layers, selIds) {
     function curFace() { return rTop.value ? 'top' : rRight.value ? 'right' : 'left'; }
     function isCube() { return tabs.selection == t2; }
     function collect() {
-        var o = { preset: presetIdx(), rot: (ddRot.selection ? ddRot.selection.index : 0) * 90, keep: cbKeep.value,
+        var o = { preset: presetIdx(), rot: (ddRot.selection ? ddRot.selection.index : 0) * 90, keep: cbKeep.value, flip: cbFlip.value,
+                  frot: { top: fT.rot, left: fL.rot, right: fR.rot },
+                  fflip: { top: fT.flip.value, left: fL.flip.value, right: fR.flip.value },
                   a: parseInt(eA.text, 10) || 0, b: parseInt(eB.text, 10) || 0, h: parseInt(eH.text, 10) || 0,
                   live: cbLive.value, face: curFace(), tab: isCube() ? 1 : 0, pct: Math.round(sl.value) };
         if (isCube()) {
@@ -609,7 +642,7 @@ function showDialog(prefs, layers, selIds) {
         }
         return o;
     }
-    function keyOf(o) { return [o.mode, o.preset, o.rot, o.keep, o.a, o.b, o.h, o.face, o.layer, o.layers ? o.layers.top + '-' + o.layers.left + '-' + o.layers.right : ''].join('|'); }
+    function keyOf(o) { return [o.mode, o.preset, o.rot, o.keep, o.flip, o.frot.top, o.frot.left, o.frot.right, o.fflip.top, o.fflip.left, o.fflip.right, o.a, o.b, o.h, o.face, o.layer, o.layers ? o.layers.top + '-' + o.layers.left + '-' + o.layers.right : ''].join('|'); }
     function revert() {
         if (!previewed) return;
         try { doc.activeHistoryState = startState; } catch (e) { }
@@ -629,7 +662,11 @@ function showDialog(prefs, layers, selIds) {
         o.out = out;
         return o;
     }
-    function changed() { refreshDrawing(); if (cbLive.value) preview(false); }
+    function changed() {
+        refreshDrawing();
+        if (cbLive.value) preview(false);
+        else status.text = previewed ? 'Đã đổi thiết lập. Bấm "Xem trước" để xem lại, hoặc "Xong" để áp dụng luôn.' : 'Chọn xong thì bấm "Xem trước" để xem thử trên ảnh.';
+    }
 
     function refreshDrawing() { note.text = PRESETS[presetIdx()].note; try { pv.hide(); pv.show(); } catch (e) { } }
     pv.onDraw = function () {
@@ -656,7 +693,7 @@ function showDialog(prefs, layers, selIds) {
         } catch (e) { }
     };
 
-    dd.onChange = function () { sizeFromSlider(); changed(); }; ddRot.onChange = changed; cbKeep.onClick = changed;
+    dd.onChange = function () { sizeFromSlider(); changed(); }; ddRot.onChange = changed; cbKeep.onClick = changed; cbFlip.onClick = changed;
     rTop.onClick = changed; rLeft.onClick = changed; rRight.onClick = changed;
     ddOne.onChange = changed;
     var sizeChanged = function () { sizeFromSlider(); changed(); };
