@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- SoTrangTuDong.jsx v1.3.1: bấm "Xem trước" sẽ hiện thêm một bảng "Thông tin kiểm tra" (vị trí artboard và số trang của trang trái), bạn chụp gửi lại để tìm đúng lỗi số trang trái nằm giữa.
 - SoTrangTuDong.jsx v1.3.0: đổi hẳn cách đặt số: dùng lệnh Align của Photoshop canh theo chính artboard (như bấm canh trái/phải, canh dưới) rồi dời vào đúng lề, nên số ở trang trái phải nằm góc trái.
 - Panel Tool Launcher v1.5.0: bấm tool thì bảng tự ẩn cho đỡ che màn hình, tool chạy xong bảng tự hiện lại. Tắt được bằng ô "Tự ẩn bảng khi chạy tool" ở cuối bảng. Cần tắt và mở lại Photoshop một lần sau khi cập nhật.
 - SoTrangTuDong.jsx v1.2.1: sửa tiếp lỗi số ở trang trái nằm giữa: số được tạo sẵn ở đúng góc và canh lề ngay từ đầu, dời bằng cách khác rồi tự kiểm tra lại; nếu còn lệch tool báo và ghi nhật ký SoTrang_nhatky.txt ra Desktop để gửi lại.

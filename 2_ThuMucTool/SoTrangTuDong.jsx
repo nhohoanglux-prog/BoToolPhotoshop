@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), đối xứng như sách; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.3.0
+  @version: 1.3.1
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,9 +18,9 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.3.0';
+var TOOL_VERSION = '1.3.1';
 var TAG = '[Số trang]';
-var LOG = [];   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
+var LOG = [], STEPS = [], DIAG = '';   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
 
@@ -220,6 +220,7 @@ function applyAll(st, arts, fxFromId, limit) {
     var col = hexToColor(st.color);
     var font = fontExists(st.font) ? st.font : null;
     var stat = { added: 0, updated: 0, removed: 0, warns: [] };
+    DIAG = '';
     LOG = ['Số trang tự động v' + TOOL_VERSION + ' | ' + new Date() + ' | file ' + doc.name + ' ' + px(doc.width) + 'x' + px(doc.height) + ' px, ' + res + ' ppi'];
     if (!font) stat.warns.push('Không tìm thấy font "' + st.font + '", giữ font hiện có.');
 
@@ -289,6 +290,20 @@ function applyAll(st, arts, fxFromId, limit) {
             ' | artboard x ' + Math.round(ab.left) + '..' + Math.round(ab.left + ab.w) + ' y ' + Math.round(ab.top) + '..' + Math.round(ab.top + ab.h) +
             ' | chữ lúc đầu x ' + Math.round(b0.L) + '..' + Math.round(b0.R) + ' | dời ' + (moves.join(' ; ') || 'không') +
             ' | chữ sau x ' + Math.round(b.L) + '..' + Math.round(b.R) + ' y ' + Math.round(b.T) + '..' + Math.round(b.B) + ' | lệch ' + off);
+        LOG.push('    các bước (x trái..phải / y trên..dưới): ' + STEPS.join(' | '));
+        if (!DIAG && h == 0) {
+            var abB = layerBoundsById(ab.id), dom = '';
+            try { var db = lyr.bounds; dom = Math.round(px(db[0])) + '..' + Math.round(px(db[2])); } catch (e) { }
+            DIAG = 'THÔNG TIN KIỂM TRA (chụp màn hình gửi Claude giúp mình):\n' +
+                'Trang thứ ' + (i + 1) + ' "' + ab.name + '" là trang TRÁI (cột ' + ab.col + '/' + ab.rowLen + ')\n' +
+                'Khổ file: ' + Math.round(px(doc.width)) + ' x ' + Math.round(px(doc.height)) + ' px\n' +
+                'Artboard (artboardRect): x ' + Math.round(ab.left) + '..' + Math.round(ab.left + ab.w) + ', y ' + Math.round(ab.top) + '..' + Math.round(ab.top + ab.h) + '\n' +
+                'Artboard (bounds layer): ' + abB + '\n' +
+                'Số trang: ' + STEPS.join('\n   ') + '\n' +
+                'Số trang (DOM): x ' + dom + '\n' +
+                'Canh bằng Align: ' + (aligned ? 'có' : 'KHÔNG (lỗi)') + '\n' +
+                'Nhật ký đầy đủ: ' + logFile().fsName;
+        }
         if (!aligned && Math.abs(off) > 3) stat.warns.push('Trang thứ ' + (i + 1) + ': số còn lệch ' + off + ' px so với chỗ đúng.');
         prog('Đang gắn số: trang thứ ' + (i + 1) + '/' + arts.length, Math.round((i + 1) / arts.length * 100));
 
@@ -362,12 +377,25 @@ function alignInArtboard(lyr, h, v, mx, my) {
             d.putBoolean(s('alignToCanvas'), true);
             executeAction(c('Algn'), d, DialogModes.NO);
         }
+        function fm(b) { return Math.round(b.L) + '..' + Math.round(b.R) + ' / ' + Math.round(b.T) + '..' + Math.round(b.B); }
+        STEPS = ['tạo xong ' + fm(measureLayer(lyr))];
         al(h == 0 ? 'ADSLefts' : h == 1 ? 'ADSCentersH' : 'ADSRights');
+        STEPS.push('canh ngang ' + fm(measureLayer(lyr)));
         al(v == 0 ? 'ADSTops' : v == 1 ? 'ADSCentersV' : 'ADSBottoms');
+        STEPS.push('canh dọc ' + fm(measureLayer(lyr)));
         var dx = h == 0 ? mx : h == 2 ? -mx : 0, dy = v == 0 ? my : v == 2 ? -my : 0;
         if (dx || dy) moveLayerBy(lyr, dx, dy);
+        STEPS.push('dời lề ' + fm(measureLayer(lyr)));
         return true;
     } catch (e) { return false; }
+}
+function layerBoundsById(id) {
+    try {
+        var r = new ActionReference(); r.putIdentifier(c('Lyr '), id);
+        var o = executeActionGet(r).getObjectValue(s('bounds'));
+        return 'x ' + Math.round(o.getUnitDoubleValue(s('left'))) + '..' + Math.round(o.getUnitDoubleValue(s('right'))) +
+            ', y ' + Math.round(o.getUnitDoubleValue(s('top'))) + '..' + Math.round(o.getUnitDoubleValue(s('bottom')));
+    } catch (e) { return 'không đọc được'; }
 }
 // Dời layer bằng Action Manager (như kéo bằng Move tool)
 function moveLayerBy(lyr, dx, dy) {
@@ -676,6 +704,7 @@ function showDialog(st, arts, fromActive) {
             savePrevN(n);
             status.text = out.pages.length ? 'Đang xem thử trang thứ ' + out.pages.join(', ') + ' (gần bìa). Ưng thì bấm "Cập nhật tất cả", chưa ưng thì sửa rồi bấm Xem trước lại.' : 'Không có trang nào được gắn số với thiết lập này.';
             if (out.warns.length) alert(out.warns.join('\n'));
+            if (DIAG) alert(DIAG);   // tạm thời, để tìm lỗi số trang trái nằm giữa
         }
         o.__warns = out.warns; o.__out = out;
         return o;

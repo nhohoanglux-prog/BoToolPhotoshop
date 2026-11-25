@@ -31,9 +31,9 @@
     {
       "path": "SoTrangTuDong.jsx",
       "name": "Số trang tự động",
-      "version": "1.3.0",
+      "version": "1.3.1",
       "date": "2026-11-25",
-      "notes": "Đổi hẳn cách đặt số: dùng lệnh Align của Photoshop canh theo chính artboard (như bấm canh trái/phải, canh dưới) rồi dời vào đúng lề, nên số ở trang trái phải nằm góc trái."
+      "notes": "Bấm \"Xem trước\" sẽ hiện thêm một bảng \"Thông tin kiểm tra\" (vị trí artboard và số trang của trang trái), bạn chụp gửi lại để tìm đúng lỗi số trang trái nằm giữa."
     },
     {
       "path": "XoayIsometric.jsx",
@@ -51,6 +51,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "SoTrangTuDong.jsx v1.3.1: bấm \"Xem trước\" sẽ hiện thêm một bảng \"Thông tin kiểm tra\" (vị trí artboard và số trang của trang trái), bạn chụp gửi lại để tìm đúng lỗi số trang trái nằm giữa."
+    },
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.3.0: đổi hẳn cách đặt số: dùng lệnh Align của Photoshop canh theo chính artboard (như bấm canh trái/phải, canh dưới) rồi dời vào đúng lề, nên số ở trang trái phải nằm góc trái."
@@ -86,10 +90,6 @@
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.0.1: sửa lỗi \"The layer cannot contain text\" khi bấm Xem trước / Cập nhật tất cả (số trang trong artboard giờ được tạo như khi bấm công cụ chữ)."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "SoTrangTuDong.jsx v1.0.0: tool mới \"Số trang tự động\" kiểu Canva: gắn số cho mọi artboard theo thứ tự trang, 3 kiểu \"01\", \"Trang 01\", \"01 / 43\" (hoặc tự gõ mẫu), đối xứng như sách (trang trái số ở góc trái, trang phải ở góc phải), bìa không hiện số nhưng vẫn tính là trang 1, chọn trang bắt đầu, số bắt đầu và trang bỏ qua; chỉnh tay 1 số trang (font, cỡ, màu, vị trí) rồi chạy tool, bấm \"Cập nhật tất cả\" là mọi trang đổi theo. Kiểu được lưu ngay trong file."
     }
   ]
 }
