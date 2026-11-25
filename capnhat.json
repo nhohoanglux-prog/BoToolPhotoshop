@@ -22,12 +22,16 @@
     {
       "path": "XuatArtboardNen.jsx",
       "name": "Xuất artboard nén theo dung lượng",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "date": "2026-11-25",
-      "notes": "Nút \"Chất lượng cao nhất\" giờ luôn xuất 300 DPI, chất lượng 12, không giới hạn dung lượng, chỉ 1 lần. Khi có giới hạn MB, script ước tính trước bằng vài trang mẫu nên thường chỉ xuất 1 lần, nhanh hơn nhiều."
+      "notes": "Xuất xong có nút \"Mở thư mục chứa file\" (mở File Explorer, tô sẵn file vừa xuất) và nút \"Mở file PDF\" / \"Mở ảnh đầu tiên\"."
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "XuatArtboardNen.jsx v1.3.0: xuất xong có nút \"Mở thư mục chứa file\" (mở File Explorer, tô sẵn file vừa xuất) và nút \"Mở file PDF\" / \"Mở ảnh đầu tiên\"."
+    },
     {
       "date": "2026-11-25",
       "text": "XuatArtboardNen.jsx v1.2.0: nút \"Chất lượng cao nhất\" giờ luôn xuất 300 DPI, chất lượng 12, không giới hạn dung lượng, chỉ 1 lần. Khi có giới hạn MB, script ước tính trước bằng vài trang mẫu nên thường chỉ xuất 1 lần, nhanh hơn nhiều."

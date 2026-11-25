@@ -3,7 +3,7 @@
   @name: Xuất artboard nén theo dung lượng
   @group: Xuất file
   @desc: Xuất tất cả artboard theo thứ tự trang ra PDF, JPG hoặc PNG, tự nén cho tổng dung lượng vừa giới hạn MB.
-  @version: 1.2.0
+  @version: 1.3.0
   @date: 2026-11-25
 
   XuatArtboardNen.jsx
@@ -461,6 +461,46 @@ function planSettings(M, O, order, pages, tmp, dpi, q, log) {
     return { dpi: O.minDpi, q: eMin > target * 1.6 ? 4 : 6 };
 }
 
+// ---------- Mở file / thư mục sau khi xuất ----------
+// Mở File Explorer và tô sẵn file vừa xuất. Dùng file .vbs tạm (lưu UTF-16) để đường dẫn
+// có tiếng Việt có dấu không bị lỗi. Không được thì mở thư mục chứa file.
+function revealInExplorer(path) {
+    var f = new File(path);
+    if ($.os.indexOf('Windows') !== 0) { f.parent.execute(); return; }
+    try {
+        var cmd = 'CreateObject("WScript.Shell").Run "explorer.exe /select,""' + f.fsName + '""", 1, False\r\n';
+        var vbs = new File(Folder.temp.fsName + '/MoThuMuc_' + new Date().getTime() + '.vbs');
+        vbs.encoding = 'BINARY';
+        if (!vbs.open('w')) throw new Error('vbs');
+        var out = String.fromCharCode(255, 254);       // BOM UTF-16 LE
+        for (var i = 0; i < cmd.length; i++) {
+            var cc = cmd.charCodeAt(i);
+            out += String.fromCharCode(cc & 255, (cc >> 8) & 255);
+        }
+        vbs.write(out); vbs.close();
+        if (!vbs.execute()) throw new Error('run');
+    } catch (e) {
+        f.parent.execute();
+    }
+}
+
+function showResult(msg, saved, isPdf) {
+    var w = new Window('dialog', 'Xuất xong');
+    w.alignChildren = 'fill';
+    var box = w.add('edittext', undefined, msg, { multiline: true, readonly: true, scrolling: true });
+    box.preferredSize = [520, 260];
+    var b = w.add('group'); b.alignment = 'right';
+    if (saved.length) {
+        var openDir = b.add('button', undefined, 'Mở thư mục chứa file');
+        openDir.helpTip = 'Mở File Explorer, tô sẵn file vừa xuất.';
+        openDir.onClick = function () { revealInExplorer(saved[0]); w.close(); };
+        var openFile = b.add('button', undefined, isPdf ? 'Mở file PDF' : 'Mở ảnh đầu tiên');
+        openFile.onClick = function () { new File(saved[0]).execute(); w.close(); };
+    }
+    b.add('button', undefined, 'Đóng', { name: 'ok' });
+    w.show();
+}
+
 // ---------- Chạy ----------
 (function main() {
     if (!app.documents.length) { alert('Chưa mở file nào.'); return; }
@@ -569,5 +609,5 @@ function planSettings(M, O, order, pages, tmp, dpi, q, log) {
         '\nThiết lập cuối: ' + Math.round(result.dpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng JPEG ' + result.q) +
         '\n\n' + result.log.join('\n');
     if (!result.ok) msg += '\n\nThử giảm "Không hạ dưới (DPI)", tăng giới hạn MB' + (O.fmt === 2 ? ', hoặc đổi sang JPG.' : '.');
-    alert(msg);
+    showResult(msg, saved, O.fmt === 0);
 })();
