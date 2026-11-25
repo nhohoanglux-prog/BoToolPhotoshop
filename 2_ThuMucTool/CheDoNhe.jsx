@@ -3,7 +3,7 @@
   @name: Chế độ nhẹ (bớt lag khi dàn trang)
   @group: Tối ưu file
   @desc: Tạm thay ảnh nhúng bằng bản nhẹ (chọn %), giữ nét artboard đang làm, xem RAM; bấm lại là trả ảnh gốc đầy đủ.
-  @version: 1.0.0
+  @version: 1.1.0
   @date: 2026-11-25
 
   CheDoNhe.jsx
@@ -351,19 +351,44 @@ function plan(S, mode, keepABs, pct, minEdge) {
 // ---------------------------------------------------------------------------
 // Làm nhẹ / trả về đầy đủ
 // ---------------------------------------------------------------------------
-var PROG;
-function progOpen(t) {
-    PROG = new Window('palette', t);
-    PROG.alignChildren = 'fill';
-    PROG.msg = PROG.add('statictext', undefined, 'Chuẩn bị...'); PROG.msg.characters = 60;
-    PROG.bar = PROG.add('progressbar', undefined, 0, 100); PROG.bar.preferredSize.width = 400;
-    PROG.show();
+// ---------- Thanh tiến trình + nút Dừng (Esc) – khối dùng chung, giống hệt ở các tool ----------
+// prog() ném lỗi PROG_STOP khi bấm Dừng / Esc; tool bắt lỗi đó rồi trả file về như lúc trước khi chạy.
+var PROG = null, PROG_STOP = 'DUNG_THEO_YEU_CAU', PROG_T = 0;
+function progOpen(title) {
+    var w = new Window('palette', title || 'Đang chạy...');
+    w.alignChildren = 'fill'; w.stop = false;
+    w.msg = w.add('statictext', undefined, 'Chuẩn bị...'); w.msg.characters = 55;
+    w.bar = w.add('progressbar', undefined, 0, 100); w.bar.preferredSize.width = 400;
+    var g = w.add('group'); g.alignment = 'right';
+    g.add('statictext', undefined, 'Bấm Dừng hoặc Esc: hủy hết, file trả về như cũ');
+    var b = g.add('button', undefined, 'Dừng');
+    b.onClick = function () { w.stop = true; b.text = 'Đang dừng...'; };
+    w.addEventListener('keydown', function (e) { if (e.keyName == 'Escape') w.stop = true; });
+    w.onClose = function () { w.stop = true; };
+    PROG = w; PROG_T = 0;
+    w.show();
 }
 function prog(msg, pct) {
     if (!PROG) return;
-    PROG.msg.text = msg; PROG.bar.value = pct;
-    PROG.update(); try { app.refresh(); } catch (e) { }
+    if (msg != null) PROG.msg.text = msg;
+    if (pct != null) PROG.bar.value = pct;
+    PROG.update();
+    var now = new Date().getTime();
+    if (now - PROG_T > 600) { PROG_T = now; try { app.refresh(); } catch (e) { } }
+    if (PROG && PROG.stop) throw new Error(PROG_STOP);
 }
+function progClose() {
+    if (!PROG) return;
+    var w = PROG; PROG = null; w.onClose = null;
+    try { w.close(); } catch (e) { }
+}
+// Bấm Dừng, hoặc Esc của chính Photoshop ("User cancelled the operation", mã 8007)
+function isStopErr(e) {
+    if (!e) return false;
+    var m = String(e.message || e);
+    return m.indexOf(PROG_STOP) >= 0 || e.number == 8007 || /cancel/i.test(m);
+}
+// ---------- hết khối dùng chung ----------
 
 function lighten(doc, store, groups, pct, minEdge, log, stat) {
     if (!store.exists) store.create();
@@ -651,13 +676,17 @@ function showDialog(S, R, keepABs, keepNames, P) {
         err = e2;
         try { app.activeDocument = doc; doc.activeHistoryState = doc.historyStates.getByName(snap); } catch (e3) { }
     } finally {
-        if (PROG) try { PROG.close(); } catch (e4) { }
+        progClose();
         try { app.activeDocument = doc; } catch (e5) { }
         try { if (!err && sel.length) selectLayerByID(sel[0]); } catch (e7) { }
         app.preferences.rulerUnits = oldUnits;
         app.displayDialogs = oldDlg;
     }
 
+    if (err && isStopErr(err)) {
+        alert('Đã dừng. File đã trả về như lúc trước khi chạy tool (snapshot "' + snap + '").\nẢnh gốc vẫn nằm nguyên trong:\n' + store.fsName);
+        return;
+    }
     if (err) {
         alert('Có lỗi, file đã được trả về như lúc trước khi chạy tool:\n' + err + (err.line ? '\n(dòng ' + err.line + ')' : '') +
               '\n\nẢnh gốc vẫn nằm trong:\n' + store.fsName);

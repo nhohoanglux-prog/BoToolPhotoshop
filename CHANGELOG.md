@@ -1,6 +1,9 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- DanhSoArtboard.jsx v1.1.0: có khung tiến độ và nút "Dừng" (hoặc Esc) khi đang đánh số; dừng là trả file về y như cũ.
+- XuatArtboardNen.jsx v1.6.0: nút "Dừng" (hoặc Esc) trong khung tiến độ khi đang xuất; dừng là hủy ngay, không để lại file xuất dở, file PSD vẫn nguyên.
+- CheDoNhe.jsx v1.1.0: nút "Dừng" (hoặc Esc) khi đang làm nhẹ / trả ảnh gốc; dừng là file trả về như lúc trước khi chạy, ảnh gốc vẫn nguyên.
 - SoTrangTuDong.jsx v1.2.0: sửa lỗi trang bên trái số bị lệch ra giữa, giờ nằm đúng góc trái như sách; bấm "Cập nhật tất cả" có khung tiến độ và nút "Dừng" (hoặc Esc), dừng là trả file về y như cũ.
 - SoTrangTuDong.jsx v1.1.0: "Xem trước" giờ chỉ gắn thử số cho vài trang đầu (mặc định 3 trang, thấy được cả trang trái lẫn trang phải) nên rất nhanh; ưng rồi mới bấm "Cập nhật tất cả" để áp cho mọi trang, bấm Hủy là bỏ hết số xem thử.
 - SoTrangTuDong.jsx v1.0.1: sửa lỗi "The layer cannot contain text" khi bấm Xem trước / Cập nhật tất cả (số trang trong artboard giờ được tạo như khi bấm công cụ chữ).

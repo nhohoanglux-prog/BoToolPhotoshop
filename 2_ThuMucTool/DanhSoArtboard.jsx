@@ -3,7 +3,7 @@
   @name: Đánh số Artboard
   @group: Artboard
   @desc: Đánh số lại artboard theo vị trí (trên xuống, trái sang), sắp lại bảng Layers, Ctrl+Z một lần là hoàn tác.
-  @version: 1.0.0
+  @version: 1.1.0
   @date: 2026-11-25
 
   DanhSoArtboard.jsx  –  Đánh số lại artboard theo vị trí trên canvas
@@ -136,10 +136,54 @@ function showDialog(total) {
     };
 }
 
-var OPTS, ORDER;
+// ---------- Thanh tiến trình + nút Dừng (Esc) – khối dùng chung, giống hệt ở các tool ----------
+// prog() ném lỗi PROG_STOP khi bấm Dừng / Esc; tool bắt lỗi đó rồi trả file về như lúc trước khi chạy.
+var PROG = null, PROG_STOP = 'DUNG_THEO_YEU_CAU', PROG_T = 0;
+function progOpen(title) {
+    var w = new Window('palette', title || 'Đang chạy...');
+    w.alignChildren = 'fill'; w.stop = false;
+    w.msg = w.add('statictext', undefined, 'Chuẩn bị...'); w.msg.characters = 55;
+    w.bar = w.add('progressbar', undefined, 0, 100); w.bar.preferredSize.width = 400;
+    var g = w.add('group'); g.alignment = 'right';
+    g.add('statictext', undefined, 'Bấm Dừng hoặc Esc: hủy hết, file trả về như cũ');
+    var b = g.add('button', undefined, 'Dừng');
+    b.onClick = function () { w.stop = true; b.text = 'Đang dừng...'; };
+    w.addEventListener('keydown', function (e) { if (e.keyName == 'Escape') w.stop = true; });
+    w.onClose = function () { w.stop = true; };
+    PROG = w; PROG_T = 0;
+    w.show();
+}
+function prog(msg, pct) {
+    if (!PROG) return;
+    if (msg != null) PROG.msg.text = msg;
+    if (pct != null) PROG.bar.value = pct;
+    PROG.update();
+    var now = new Date().getTime();
+    if (now - PROG_T > 600) { PROG_T = now; try { app.refresh(); } catch (e) { } }
+    if (PROG && PROG.stop) throw new Error(PROG_STOP);
+}
+function progClose() {
+    if (!PROG) return;
+    var w = PROG; PROG = null; w.onClose = null;
+    try { w.close(); } catch (e) { }
+}
+// Bấm Dừng, hoặc Esc của chính Photoshop ("User cancelled the operation", mã 8007)
+function isStopErr(e) {
+    if (!e) return false;
+    var m = String(e.message || e);
+    return m.indexOf(PROG_STOP) >= 0 || e.number == 8007 || /cancel/i.test(m);
+}
+// ---------- hết khối dùng chung ----------
+
+var OPTS, ORDER, RUN_ERR;
 
 function run() {
+    try { runInner(); } catch (e) { RUN_ERR = e; }
+}
+function runInner() {
+    var n = ORDER.length * (OPTS.reorder ? 2 : 1), k = 0;
     for (var i = 0; i < ORDER.length; i++) {
+        prog('Đang đổi tên: ' + (i + 1) + '/' + ORDER.length, Math.round(++k / n * 100));
         selectById(ORDER[i].id);
         renameSelected(OPTS.prefix + pad(OPTS.start + i, OPTS.digits));
     }
@@ -147,6 +191,7 @@ function run() {
         // Đưa từ trang cuối lên trên cùng trước, trang đầu lên sau cùng
         // => Trang 01 nằm trên cùng, các trang sau lần lượt xuống dưới.
         for (var j = ORDER.length - 1; j >= 0; j--) {
+            prog('Đang sắp lại bảng Layers...', Math.round(++k / n * 100));
             selectById(ORDER[j].id);
             bringSelectedToFront();
         }
@@ -161,6 +206,15 @@ function run() {
     ORDER = sortByPosition(arts);
     OPTS = showDialog(ORDER.length);
     if (!OPTS) return;
-    app.activeDocument.suspendHistory('Đánh số artboard', 'run()');
+    var doc = app.activeDocument, before = doc.activeHistoryState;
+    RUN_ERR = null;
+    progOpen('Đánh số artboard');
+    try { doc.suspendHistory('Đánh số artboard', 'run()'); } catch (e) { RUN_ERR = RUN_ERR || e; }
+    finally { progClose(); }
+    if (RUN_ERR) {
+        try { doc.activeHistoryState = before; } catch (e2) { }
+        alert(isStopErr(RUN_ERR) ? 'Đã dừng. File đã trả về như lúc trước khi chạy.' : 'Có lỗi: ' + RUN_ERR + '\nFile đã trả về như cũ.');
+        return;
+    }
     alert('Xong! Đã đánh số ' + ORDER.length + ' artboard.\nBấm Ctrl+Z nếu muốn hoàn tác.');
 })();

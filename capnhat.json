@@ -15,16 +15,16 @@
     {
       "path": "CheDoNhe.jsx",
       "name": "Chế độ nhẹ (bớt lag khi dàn trang)",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "date": "2026-11-25",
-      "notes": "Tool mới \"Chế độ nhẹ\" giúp bớt lag: tạm thay ảnh Smart Object bằng bản nhẹ theo % bạn chọn (thanh trượt), kích thước và vị trí giữ nguyên, ảnh gốc được cất ở thư mục cạnh file; xem RAM Photoshop đang dùng và RAM dự kiến sau khi làm nhẹ; giữ nét artboard đang chọn, nút \"Làm nét artboard đang chọn\" để đổi sang trang khác; \"Trả về đầy đủ tất cả\" để lấy lại ảnh gốc."
+      "notes": "Nút \"Dừng\" (hoặc Esc) khi đang làm nhẹ / trả ảnh gốc; dừng là file trả về như lúc trước khi chạy, ảnh gốc vẫn nguyên."
     },
     {
       "path": "DanhSoArtboard.jsx",
       "name": "Đánh số Artboard",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "date": "2026-11-25",
-      "notes": "Bản đầu tiên."
+      "notes": "Có khung tiến độ và nút \"Dừng\" (hoặc Esc) khi đang đánh số; dừng là trả file về y như cũ."
     },
     {
       "path": "SoTrangTuDong.jsx",
@@ -43,12 +43,24 @@
     {
       "path": "XuatArtboardNen.jsx",
       "name": "Xuất artboard nén theo dung lượng",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "date": "2026-11-25",
-      "notes": "Báo trước nếu file đang ở chế độ nhẹ (ảnh mờ), để bạn trả về đầy đủ rồi mới xuất."
+      "notes": "Nút \"Dừng\" (hoặc Esc) trong khung tiến độ khi đang xuất; dừng là hủy ngay, không để lại file xuất dở, file PSD vẫn nguyên."
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "DanhSoArtboard.jsx v1.1.0: có khung tiến độ và nút \"Dừng\" (hoặc Esc) khi đang đánh số; dừng là trả file về y như cũ."
+    },
+    {
+      "date": "2026-11-25",
+      "text": "XuatArtboardNen.jsx v1.6.0: nút \"Dừng\" (hoặc Esc) trong khung tiến độ khi đang xuất; dừng là hủy ngay, không để lại file xuất dở, file PSD vẫn nguyên."
+    },
+    {
+      "date": "2026-11-25",
+      "text": "CheDoNhe.jsx v1.1.0: nút \"Dừng\" (hoặc Esc) khi đang làm nhẹ / trả ảnh gốc; dừng là file trả về như lúc trước khi chạy, ảnh gốc vẫn nguyên."
+    },
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.2.0: sửa lỗi trang bên trái số bị lệch ra giữa, giờ nằm đúng góc trái như sách; bấm \"Cập nhật tất cả\" có khung tiến độ và nút \"Dừng\" (hoặc Esc), dừng là trả file về y như cũ."
@@ -76,18 +88,6 @@
     {
       "date": "2026-11-25",
       "text": "XuatArtboardNen.jsx v1.5.0: báo trước nếu file đang ở chế độ nhẹ (ảnh mờ), để bạn trả về đầy đủ rồi mới xuất."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "XoayIsometric.jsx v1.5.0: thêm ô \"Khóa khối\" (bật sẵn): dựng xong 3 layer được liên kết với nhau và mask dính với ảnh, kéo 1 mặt là cả khối đi theo. Muốn dịch ảnh trong 1 mặt thì bấm tắt biểu tượng xích giữa ảnh và mask, kéo xong bấm lại."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "XoayIsometric.jsx v1.4.0: khối hộp bớt cắt ảnh: thêm ô \"Khối theo tỉ lệ ảnh\" (bật sẵn, 2 mặt tường giữ trọn ảnh); ảnh gốc vẫn nguyên trong Smart Object và mask không dính vào ảnh nữa, nên dựng xong bạn dùng Move tool (V) kéo ảnh qua lại để chọn phần muốn hiện, khung mặt đứng yên."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "XoayIsometric.jsx v1.3.0: không tự xem trước nữa, chọn xong bấm \"Xem trước\" mới hiện (vẫn bật lại được ô \"Tự xem trước mỗi khi đổi\"); thêm nút đổi chỗ ảnh giữa các mặt (Trên ⇄ Trái, Trái ⇄ Phải, Trên ⇄ Phải, Xoay vòng 3 ảnh); mỗi mặt có nút \"Xoay ↻\" 90° và ô \"Lật\"; thẻ Xoay 1 ảnh có thêm ô \"Lật ngang\"."
     }
   ]
 }

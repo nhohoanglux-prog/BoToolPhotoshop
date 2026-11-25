@@ -3,7 +3,7 @@
   @name: Xuất artboard nén theo dung lượng
   @group: Xuất file
   @desc: Xuất tất cả artboard theo thứ tự trang ra PDF, JPG hoặc PNG, tự nén cho tổng dung lượng vừa giới hạn MB.
-  @version: 1.5.0
+  @version: 1.6.0
   @date: 2026-11-25
 
   XuatArtboardNen.jsx
@@ -204,20 +204,44 @@ function showDialog(total, docName, docFolder) {
     };
 }
 
-// ---------- Thanh tiến trình ----------
-var PROG;
-function progOpen() {
-    PROG = new Window('palette', 'Đang xuất...');
-    PROG.alignChildren = 'fill';
-    PROG.msg = PROG.add('statictext', undefined, 'Chuẩn bị...'); PROG.msg.characters = 55;
-    PROG.bar = PROG.add('progressbar', undefined, 0, 100); PROG.bar.preferredSize.width = 380;
-    PROG.show();
+// ---------- Thanh tiến trình + nút Dừng (Esc) – khối dùng chung, giống hệt ở các tool ----------
+// prog() ném lỗi PROG_STOP khi bấm Dừng / Esc; tool bắt lỗi đó rồi trả file về như lúc trước khi chạy.
+var PROG = null, PROG_STOP = 'DUNG_THEO_YEU_CAU', PROG_T = 0;
+function progOpen(title) {
+    var w = new Window('palette', title || 'Đang chạy...');
+    w.alignChildren = 'fill'; w.stop = false;
+    w.msg = w.add('statictext', undefined, 'Chuẩn bị...'); w.msg.characters = 55;
+    w.bar = w.add('progressbar', undefined, 0, 100); w.bar.preferredSize.width = 400;
+    var g = w.add('group'); g.alignment = 'right';
+    g.add('statictext', undefined, 'Bấm Dừng hoặc Esc: hủy hết, file trả về như cũ');
+    var b = g.add('button', undefined, 'Dừng');
+    b.onClick = function () { w.stop = true; b.text = 'Đang dừng...'; };
+    w.addEventListener('keydown', function (e) { if (e.keyName == 'Escape') w.stop = true; });
+    w.onClose = function () { w.stop = true; };
+    PROG = w; PROG_T = 0;
+    w.show();
 }
 function prog(msg, pct) {
     if (!PROG) return;
-    PROG.msg.text = msg; PROG.bar.value = pct;
-    PROG.update(); try { app.refresh(); } catch (e) {}
+    if (msg != null) PROG.msg.text = msg;
+    if (pct != null) PROG.bar.value = pct;
+    PROG.update();
+    var now = new Date().getTime();
+    if (now - PROG_T > 600) { PROG_T = now; try { app.refresh(); } catch (e) { } }
+    if (PROG && PROG.stop) throw new Error(PROG_STOP);
 }
+function progClose() {
+    if (!PROG) return;
+    var w = PROG; PROG = null; w.onClose = null;
+    try { w.close(); } catch (e) { }
+}
+// Bấm Dừng, hoặc Esc của chính Photoshop ("User cancelled the operation", mã 8007)
+function isStopErr(e) {
+    if (!e) return false;
+    var m = String(e.message || e);
+    return m.indexOf(PROG_STOP) >= 0 || e.number == 8007 || /cancel/i.test(m);
+}
+// ---------- hết khối dùng chung ----------
 
 // ---------- Ghi PDF (nhúng JPEG trực tiếp, không nén lại lần nữa) ----------
 function readBinary(f) {
@@ -579,7 +603,7 @@ function countLightLayers() {
     var M = null, result = null, err = null, saved = [];
 
     try {
-        progOpen();
+        progOpen('Đang xuất...');
         prog('Đang tạo bản sao và gộp layer (có thể hơi lâu với file nặng)...', 2);
         var master = doc.duplicate(docName + '_tam_xuat');
         M = { doc: master, res: doc.resolution };
@@ -623,6 +647,7 @@ function countLightLayers() {
             for (var j = 0; j < R.files.length; j++) {
                 var dst = new File(O.imgFolder.fsName + '/' + R.files[j].name);
                 if (dst.exists) dst.remove();
+                prog('Đang lưu file ' + (j + 1) + '/' + R.files.length + '...', 99);
                 if (!R.files[j].copy(dst.fsName)) throw new Error('Không chép được ' + R.files[j].name);
                 saved.push(dst.fsName);
             }
@@ -630,16 +655,19 @@ function countLightLayers() {
         result = { ok: ok, size: R.total, dpi: curDpi, q: curQ, log: log, count: pages.length };
     } catch (e) {
         err = e;
+        // Dừng / lỗi giữa chừng: xoá các file đã lỡ chép ra (file gốc PSD không bị đụng tới)
+        for (var z = 0; z < saved.length; z++) try { new File(saved[z]).remove(); } catch (ez) {}
     } finally {
         if (M && M.doc) try { M.doc.close(SaveOptions.DONOTSAVECHANGES); } catch (e2) {}
         var fl = tmp.getFiles(); for (var f = 0; f < fl.length; f++) try { fl[f].remove(); } catch (e3) {}
         try { tmp.remove(); } catch (e4) {}
-        if (PROG) try { PROG.close(); } catch (e5) {}
+        progClose();
         app.preferences.rulerUnits = oldUnits;
         app.displayDialogs = oldDlg;
         try { app.activeDocument = doc; } catch (e6) {}
     }
 
+    if (err && isStopErr(err)) { alert('Đã dừng xuất. Không có file nào được lưu, file PSD vẫn nguyên như cũ.'); return; }
     if (err) { alert('Có lỗi khi xuất:\n' + err + (err.line ? '\n(dòng ' + err.line + ')' : '')); return; }
     var where = O.fmt === 0 ? O.pdfFile.fsName : O.imgFolder.fsName;
     var msg = (result.ok ? 'Xong!' : 'Đã hạ tới mức thấp nhất cho phép mà vẫn chưa vừa giới hạn.') +
