@@ -22,9 +22,9 @@
     {
       "path": "XoayIsometric.jsx",
       "name": "Xoay ảnh Isometric",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "date": "2026-11-25",
-      "notes": "Chia 2 thẻ \"Xoay 1 ảnh\" (chỉ xoay đúng ảnh bạn chọn) và \"Dựng khối hộp từ 3 ảnh\"; xem trước trực tiếp trên ảnh, bấm \"Xong\" để giữ, \"Hủy\" để trả lại như cũ; sửa lỗi khối hộp bị bay lung tung: khối giờ dựng ngay chỗ 3 ảnh đang nằm và gom group tại chỗ (vẫn nằm trong artboard)."
+      "notes": "Khối hộp không còn quá to: kích thước tự tính theo 3 ảnh gốc (100% = khối rộng bằng trung bình 3 ảnh), thêm thanh trượt \"Độ lớn khối\" 10–200% để thu / phóng khi đang xem trước."
     },
     {
       "path": "XuatArtboardNen.jsx",
@@ -35,6 +35,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "XoayIsometric.jsx v1.2.0: khối hộp không còn quá to: kích thước tự tính theo 3 ảnh gốc (100% = khối rộng bằng trung bình 3 ảnh), thêm thanh trượt \"Độ lớn khối\" 10–200% để thu / phóng khi đang xem trước."
+    },
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.1.0: chia 2 thẻ \"Xoay 1 ảnh\" (chỉ xoay đúng ảnh bạn chọn) và \"Dựng khối hộp từ 3 ảnh\"; xem trước trực tiếp trên ảnh, bấm \"Xong\" để giữ, \"Hủy\" để trả lại như cũ; sửa lỗi khối hộp bị bay lung tung: khối giờ dựng ngay chỗ 3 ảnh đang nằm và gom group tại chỗ (vẫn nằm trong artboard)."
@@ -70,10 +74,6 @@
     {
       "date": "2026-11-25",
       "text": "Panel Tool Launcher v1.1.0: thêm số phiên bản, ngày cập nhật và nút \"⬇ Cập nhật\"."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "DanhSoArtboard.jsx v1.0.0: bản đầu tiên."
     }
   ]
 }
