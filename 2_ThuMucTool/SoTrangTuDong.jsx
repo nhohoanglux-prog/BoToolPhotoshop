@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), đối xứng như sách; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.0.0
+  @version: 1.0.1
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.0.0';
+var TOOL_VERSION = '1.0.1';
 var TAG = '[Số trang]';
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
@@ -236,13 +236,12 @@ function applyAll(st, arts, fxFromId) {
         }
 
         var isNew = false;
+        var txt = pageText(st, arts, i);
+        if (lyr && !(lyr.typename == 'ArtLayer' && lyr.kind == LayerKind.TEXT)) { try { lyr.remove(); } catch (e) { } lyr = null; }
         if (!lyr) {
-            lyr = set.artLayers.add();
-            lyr.kind = LayerKind.TEXT;
-            try { lyr.move(set, ElementPlacement.PLACEATBEGINNING); } catch (e) { }
+            lyr = makeTextLayer(doc, set, ab, txt, st.size * 72 / res);
             isNew = true;
         }
-        var txt = pageText(st, arts, i);
         var v = Math.floor(st.pos / 3), h = st.pos % 3;
         if (st.mirror && ab.rowLen >= 2 && ab.col % 2 == 0) h = 2 - h;   // trang trái của cặp: lật ngang
 
@@ -269,6 +268,41 @@ function applyAll(st, arts, fxFromId) {
         if (isNew) stat.added++; else stat.updated++;
     }
     return stat;
+}
+// Tạo layer chữ mới nằm trên cùng trong artboard.
+// v1.0.0 dùng artLayers.add() + kind = TEXT: trong artboard Photoshop báo
+// "The layer cannot contain text", nên giờ tạo bằng Action Manager (như bấm Type tool).
+function makeTextLayer(doc, set, ab, txt, pt) {
+    // Chọn layer trên cùng của artboard (hoặc chính artboard nếu trống) để layer mới nằm trong đó
+    try { doc.activeLayer = set.layers.length ? set.layers[0] : set; } catch (e) { }
+    var W = px(doc.width), H = px(doc.height);
+    var d = new ActionDescriptor(), r = new ActionReference();
+    r.putClass(c('TxLr'));
+    d.putReference(c('null'), r);
+    var t = new ActionDescriptor();
+    t.putString(c('Txt '), txt);
+    var p = new ActionDescriptor();
+    p.putUnitDouble(c('Hrzn'), c('#Prc'), (ab.left + ab.w / 2) / W * 100);
+    p.putUnitDouble(c('Vrtc'), c('#Prc'), (ab.top + ab.h / 2) / H * 100);
+    t.putObject(c('TxtC'), c('Pnt '), p);
+    var sty = new ActionDescriptor();
+    sty.putUnitDouble(c('Sz  '), c('#Pnt'), pt);
+    var rng = new ActionDescriptor();
+    rng.putInteger(c('From'), 0); rng.putInteger(c('T   '), txt.length);
+    rng.putObject(c('TxtS'), c('TxtS'), sty);
+    var lst = new ActionList(); lst.putObject(c('Txtt'), rng);
+    t.putList(c('Txtt'), lst);
+    d.putObject(c('Usng'), c('TxLr'), t);
+    var lyr = null;
+    try { executeAction(c('Mk  '), d, DialogModes.NO); lyr = doc.activeLayer; } catch (e) { lyr = null; }
+    if (!lyr || lyr.typename != 'ArtLayer' || lyr.kind != LayerKind.TEXT) {
+        // Dự phòng: tạo ở ngoài cùng tài liệu rồi đưa vào artboard
+        lyr = doc.artLayers.add();
+        lyr.kind = LayerKind.TEXT;
+        lyr.textItem.contents = txt;
+    }
+    if (lyr.parent != set) { try { lyr.move(set, ElementPlacement.PLACEATBEGINNING); } catch (e) { } }
+    return lyr;
 }
 function removeAll(arts) {
     var doc = app.activeDocument, n = 0;
