@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- SoTrangTuDong.jsx v1.4.1: tự xoá các số trang cũ bị sót NGOÀI artboard từ những lần chạy trước (chúng hiện đè ở giữa trang trái mà tool không thấy); số mới luôn nằm trên cùng, trực tiếp trong artboard; "Gỡ hết số" xoá luôn số sót.
 - SoTrangTuDong.jsx v1.4.0: sửa lỗi số trang trái nằm giữa theo số liệu bạn gửi: tool dời số rồi đo lại xem số thật sự đi tới đâu, tự chỉnh cho tới khi đúng góc; bảng "Thông tin kiểm tra" chỉ hiện khi số còn lệch.
 - SoTrangTuDong.jsx v1.3.1: bấm "Xem trước" sẽ hiện thêm một bảng "Thông tin kiểm tra" (vị trí artboard và số trang của trang trái), bạn chụp gửi lại để tìm đúng lỗi số trang trái nằm giữa.
 - SoTrangTuDong.jsx v1.3.0: đổi hẳn cách đặt số: dùng lệnh Align của Photoshop canh theo chính artboard (như bấm canh trái/phải, canh dưới) rồi dời vào đúng lề, nên số ở trang trái phải nằm góc trái.

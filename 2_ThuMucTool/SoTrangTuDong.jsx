@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), đối xứng như sách; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.4.0
+  @version: 1.4.1
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.4.0';
+var TOOL_VERSION = '1.4.1';
 var TAG = '[Số trang]';
 var LOG = [], STEPS = [], DIAG = '';   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
 var c = function (x) { return charIDToTypeID(x); };
@@ -229,6 +229,7 @@ function applyAll(st, arts, fxFromId, limit) {
     if (fxFromId) { try { selectById(fxFromId); executeAction(c('CpFX'), undefined, DialogModes.NO); fxOK = true; } catch (e) { fxOK = false; } }
 
     var done = 0;
+    stat.strays = removeStrays(doc, arts);
     stat.pages = [];
     for (var i = 0; i < arts.length; i++) {
         if (limit > 0 && done >= limit) break;
@@ -264,6 +265,9 @@ function applyAll(st, arts, fxFromId, limit) {
         ti.size = new UnitValue(st.size * 72 / res, 'pt');   // px -> pt theo độ phân giải file
         ti.color = col;
         lyr.name = TAG + ' ' + txt;
+        // Luôn nằm trực tiếp trong artboard, trên cùng, đang hiện (không lọt vào group có mask che mất)
+        try { if (!(lyr.parent.typename == 'LayerSet' && lyr.parent.id == set.id && set.layers[0].id == lyr.id)) lyr.move(set, ElementPlacement.PLACEATBEGINNING); } catch (e) { }
+        try { if (!lyr.visible) lyr.visible = true; } catch (e) { }
 
         // Canh theo khung chữ thật trong artboard. v1.1.0 đọc bounds DOM 1 lần nên trang trái bị lệch
         // ra giữa (bounds cũ sau khi đổi canh lề chữ). Giờ đo lại mới bằng Action Manager, dời rồi kiểm tra, tối đa 3 lần.
@@ -375,7 +379,7 @@ function makeTextLayer(doc, set, ab, txt, st, h, v, res) {
         lyr.kind = LayerKind.TEXT;
         lyr.textItem.contents = txt;
     }
-    if (lyr.parent != set) { try { lyr.move(set, ElementPlacement.PLACEATBEGINNING); } catch (e) { } }
+    try { if (!(lyr.parent.typename == 'LayerSet' && lyr.parent.id == set.id)) lyr.move(set, ElementPlacement.PLACEATBEGINNING); } catch (e) { }
     return lyr;
 }
 // Canh layer theo artboard chứa nó (Align To Canvas), rồi dời vào trong theo lề
@@ -441,6 +445,22 @@ function measureLayer(lyr) {
         return { L: px(b[0]), T: px(b[1]), R: px(b[2]), B: px(b[3]) };
     }
 }
+// Xoá các layer "[Số trang]" sót lại NGOÀI artboard (từ các bản cũ): chúng hiện đè lên trang
+// nhưng tool không thấy vì chỉ tìm trong artboard. Trả về số layer đã xoá.
+function removeStrays(doc, arts) {
+    var isAB = {}, n = 0;
+    for (var i = 0; i < arts.length; i++) isAB[arts[i].id] = true;
+    function walk(cont) {
+        for (var k = cont.layers.length - 1; k >= 0; k--) {
+            var l = cont.layers[k];
+            if (l.typename == 'LayerSet') { if (!(cont === doc && isAB[l.id])) walk(l); }
+            else if (l.name.indexOf(TAG) == 0) { try { l.remove(); n++; } catch (e) { } }
+        }
+    }
+    try { walk(doc); } catch (e) { }
+    if (n) LOG.push('Đã xoá ' + n + ' layer số trang sót lại ngoài artboard.');
+    return n;
+}
 function removeAll(arts) {
     var doc = app.activeDocument, n = 0;
     for (var i = 0; i < arts.length; i++) {
@@ -449,7 +469,7 @@ function removeAll(arts) {
         var nums = findNumberLayers(set, []);
         for (var k = nums.length - 1; k >= 0; k--) { try { nums[k].remove(); n++; } catch (e) { } }
     }
-    return n;
+    return n + removeStrays(doc, arts);
 }
 function selectById(id) {
     var d = new ActionDescriptor(), r = new ActionReference();
@@ -715,7 +735,7 @@ function showDialog(st, arts, fromActive) {
         var out = g.out;
         if (!all) {
             savePrevN(n);
-            status.text = out.pages.length ? 'Đang xem thử trang thứ ' + out.pages.join(', ') + ' (gần bìa). Ưng thì bấm "Cập nhật tất cả", chưa ưng thì sửa rồi bấm Xem trước lại.' : 'Không có trang nào được gắn số với thiết lập này.';
+            status.text = (out.strays ? 'Đã xoá ' + out.strays + ' số cũ nằm ngoài artboard. ' : '') + (out.pages.length ? 'Đang xem thử trang thứ ' + out.pages.join(', ') + ' (gần bìa). Ưng thì bấm "Cập nhật tất cả", chưa ưng thì sửa rồi bấm Xem trước lại.' : 'Không có trang nào được gắn số với thiết lập này.');
             if (out.warns.length) alert(out.warns.join('\n'));
             if (DIAG) alert(DIAG);   // tạm thời, để tìm lỗi số trang trái nằm giữa
         }
