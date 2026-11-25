@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- XoayIsometric.jsx v1.6.0: hộp thoại gọn hơn nhiều (bỏ khung minh hoạ to, gom chữ hướng dẫn vào nút "?", các nút xếp sát nhau); lần đầu mở nằm sát bên phải màn hình, thanh tiêu đề luôn nằm trong màn hình để kéo được; nhớ vị trí bạn kéo tới cho lần sau.
 - CheDoNhe.jsx v1.0.0: tool mới "Chế độ nhẹ" giúp bớt lag: tạm thay ảnh Smart Object bằng bản nhẹ theo % bạn chọn (thanh trượt), kích thước và vị trí giữ nguyên, ảnh gốc được cất ở thư mục cạnh file; xem RAM Photoshop đang dùng và RAM dự kiến sau khi làm nhẹ; giữ nét artboard đang chọn, nút "Làm nét artboard đang chọn" để đổi sang trang khác; "Trả về đầy đủ tất cả" để lấy lại ảnh gốc.
 - XuatArtboardNen.jsx v1.5.0: báo trước nếu file đang ở chế độ nhẹ (ảnh mờ), để bạn trả về đầy đủ rồi mới xuất.
 - XoayIsometric.jsx v1.5.0: thêm ô "Khóa khối" (bật sẵn): dựng xong 3 layer được liên kết với nhau và mask dính với ảnh, kéo 1 mặt là cả khối đi theo. Muốn dịch ảnh trong 1 mặt thì bấm tắt biểu tượng xích giữa ảnh và mask, kéo xong bấm lại.

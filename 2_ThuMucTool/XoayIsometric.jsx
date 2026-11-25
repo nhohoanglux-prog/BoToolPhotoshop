@@ -3,7 +3,7 @@
   @name: Xoay ảnh Isometric
   @group: Hình chiếu trục đo
   @desc: Biến ảnh phẳng thành mặt trên / mặt trái / mặt phải theo góc isometric, dimetric, 45°, 30/60, cavalier… (giữ Smart Object) và dựng khối hộp từ 3 ảnh.
-  @version: 1.5.0
+  @version: 1.6.0
   @date: 2026-11-25
 
   XoayIsometric.jsx
@@ -16,7 +16,7 @@
   Dùng cho Photoshop 2021/2022 trở lên. CHƯA thử trên Photoshop thật.
 */
 
-var TOOL_VERSION = '1.5.0';
+var TOOL_VERSION = '1.6.0';
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
 
@@ -529,6 +529,25 @@ function __XI_run() {
     catch (e) { out.err = e.message + (e.line ? ' (dòng ' + e.line + ')' : ''); }
 }
 
+// Đặt hộp thoại: nhớ chỗ cũ; lần đầu thì sát bên phải màn hình. Luôn giữ thanh tiêu đề trong màn hình.
+function placeWindow(w) {
+    try {
+        var fb = w.frameBounds, fw = fb.right - fb.left, fh = fb.bottom - fb.top;
+        var x = null, y = null;
+        try { var d = app.getCustomOptions('XoayIsometric_win'); x = d.getInteger(s('x')); y = d.getInteger(s('y')); } catch (e) { }
+        var scr = $.screens[0];
+        if (x != null) for (var i = 0; i < $.screens.length; i++) {
+            var sc = $.screens[i];
+            if (x + 40 >= sc.left && x < sc.right - 40 && y >= sc.top && y < sc.bottom - 40) { scr = sc; break; }
+        }
+        if (x == null) { x = scr.right - fw - 40; y = scr.top + 90; }
+        x = Math.max(scr.left, Math.min(x, scr.right - fw));
+        y = Math.min(y, scr.bottom - fh - 50);   // chừa thanh taskbar
+        y = Math.max(y, scr.top + 10);           // thanh tiêu đề không bao giờ lọt lên trên
+        w.frameLocation = [x, y];
+    } catch (e2) { }
+}
+
 function showDialog(prefs, layers, selIds) {
     var doc = app.activeDocument;
     var startState = doc.activeHistoryState;
@@ -536,26 +555,27 @@ function showDialog(prefs, layers, selIds) {
 
     var w = new Window('dialog', 'Xoay ảnh Isometric  v' + TOOL_VERSION);
     w.orientation = 'column'; w.alignChildren = 'fill';
+    w.margins = [8, 6, 8, 6]; w.spacing = 4;
 
-    // --- Kiểu góc + hình minh hoạ
-    var p1 = w.add('panel', undefined, 'Kiểu hình chiếu');
-    var g1 = p1.add('group'); g1.orientation = 'row'; g1.alignChildren = 'top';
-    var gl = g1.add('group'); gl.orientation = 'column'; gl.alignChildren = 'fill';
+    // --- Kiểu góc + hình minh hoạ nhỏ (gọn để không che màn hình)
+    var g1 = w.add('group'); g1.orientation = 'row'; g1.alignChildren = 'center'; g1.spacing = 6;
+    g1.add('statictext', undefined, 'Góc:');
     var names = []; for (var i = 0; i < PRESETS.length; i++) names.push((i + 1) + '. ' + PRESETS[i].name);
-    var dd = gl.add('dropdownlist', undefined, names); dd.selection = prefs.preset; dd.preferredSize.width = 300;
-    var note = gl.add('statictext', undefined, '', { multiline: true }); note.preferredSize = [300, 50];
-    var pv = g1.add('panel'); pv.preferredSize = [160, 140];
+    var dd = g1.add('dropdownlist', undefined, names); dd.selection = prefs.preset; dd.preferredSize.width = 270;
+    var pv = g1.add('group'); pv.preferredSize = [70, 58];
+    var note = { text: '' };
 
     // --- 2 thẻ
     var tabs = w.add('tabbedpanel');
     var t1 = tabs.add('tab', undefined, 'Xoay 1 ảnh');
     var t2 = tabs.add('tab', undefined, 'Dựng khối hộp từ 3 ảnh');
     t1.alignChildren = 'left'; t2.alignChildren = 'left';
+    t1.margins = t2.margins = [6, 8, 6, 4]; t1.spacing = t2.spacing = 3;
 
     var lnames = []; for (var j = 0; j < layers.length; j++) lnames.push(layers[j].name);
     function layerPicker(parent, label, def) {
-        var g = parent.add('group'); var t = g.add('statictext', undefined, label); t.preferredSize.width = 75;
-        var d = g.add('dropdownlist', undefined, lnames); d.preferredSize.width = 340;
+        var g = parent.add('group'); g.spacing = 4; var t = g.add('statictext', undefined, label); t.preferredSize.width = 62;
+        var d = g.add('dropdownlist', undefined, lnames); d.preferredSize.width = 300;
         for (var k = 0; k < layers.length; k++) if (layers[k].id == def) { d.selection = k; break; }
         if (!d.selection && layers.length) d.selection = 0;
         return d;
@@ -563,24 +583,24 @@ function showDialog(prefs, layers, selIds) {
 
     // Thẻ 1: xoay 1 ảnh
     var ddOne = layerPicker(t1, 'Ảnh cần xoay:', selIds[0]);
-    var gf = t1.add('group'); gf.add('statictext', undefined, 'Đặt thành:');
-    var rTop = gf.add('radiobutton', undefined, 'Mặt trên (sàn / mái)');
+    var gf = t1.add('group'); gf.spacing = 6; gf.add('statictext', undefined, 'Đặt thành:');
+    var rTop = gf.add('radiobutton', undefined, 'Mặt trên');
     var rLeft = gf.add('radiobutton', undefined, 'Mặt trái');
     var rRight = gf.add('radiobutton', undefined, 'Mặt phải');
     (prefs.face == 'top' ? rTop : prefs.face == 'right' ? rRight : rLeft).value = true;
     var g2 = t1.add('group');
-    g2.add('statictext', undefined, 'Xoay ảnh trong mặt:');
+    g2.add('statictext', undefined, 'Xoay ảnh:');
     var ddRot = g2.add('dropdownlist', undefined, ['0°', '90°', '180°', '270°']); ddRot.selection = Math.round(prefs.rot / 90) % 4;
     var cbFlip = g2.add('checkbox', undefined, 'Lật ngang'); cbFlip.value = prefs.flip;
-    var cbKeep = t1.add('checkbox', undefined, 'Giữ bản gốc (nhân bản rồi ẩn bản gốc)'); cbKeep.value = prefs.keep;
-    t1.add('statictext', undefined, 'Chỉ ảnh đã chọn ở trên bị xoay, các layer khác giữ nguyên.');
+    var cbKeep = g2.add('checkbox', undefined, 'Giữ bản gốc'); cbKeep.value = prefs.keep;
+    cbKeep.helpTip = 'Nhân bản ảnh rồi xoay bản sao, bản gốc được ẩn đi.';
 
     // Thẻ 2: khối hộp
     function facePicker(label, def) {
         var d = layerPicker(t2, label, def), g = d.parent;
-        d.preferredSize.width = 230;
-        var b = g.add('button', undefined, 'Xoay ↻'); b.preferredSize.width = 60;
-        var tr = g.add('statictext', undefined, '0°'); tr.preferredSize.width = 34;
+        d.preferredSize.width = 190;
+        var b = g.add('button', undefined, 'Xoay ↻'); b.preferredSize = [58, 22];
+        var tr = g.add('statictext', undefined, '0°'); tr.preferredSize.width = 30;
         var fl = g.add('checkbox', undefined, 'Lật');
         var o = { dd: d, rot: 0, rotBtn: b, rotTxt: tr, flip: fl };
         b.onClick = function () { o.rot = (o.rot + 90) % 360; tr.text = o.rot + '°'; changed(); };
@@ -599,26 +619,28 @@ function showDialog(prefs, layers, selIds) {
         var f = x.flip.value; x.flip.value = y.flip.value; y.flip.value = f;
         changed();
     }
-    var gw = t2.add('group'); gw.add('statictext', undefined, 'Đổi chỗ ảnh:');
-    gw.add('button', undefined, 'Trên ⇄ Trái').onClick = function () { swap(fT, fL); };
-    gw.add('button', undefined, 'Trái ⇄ Phải').onClick = function () { swap(fL, fR); };
-    gw.add('button', undefined, 'Trên ⇄ Phải').onClick = function () { swap(fT, fR); };
-    gw.add('button', undefined, 'Xoay vòng 3 ảnh').onClick = function () { swap(fT, fL); swap(fL, fR); };
-    var gs = t2.add('group');
-    function num(label, v) { gs.add('statictext', undefined, label); var e = gs.add('edittext', undefined, String(v)); e.characters = 6; return e; }
-    var eA = num('Dài (trục phải):', 0), eB = num('Rộng (trục trái):', 0), eH = num('Cao:', 0);
+    var gw = t2.add('group'); gw.spacing = 3; gw.add('statictext', undefined, 'Đổi chỗ:');
+    function sbtn(label, fn) { var b = gw.add('button', undefined, label); b.preferredSize.height = 22; b.onClick = fn; return b; }
+    sbtn('Trên⇄Trái', function () { swap(fT, fL); });
+    sbtn('Trái⇄Phải', function () { swap(fL, fR); });
+    sbtn('Trên⇄Phải', function () { swap(fT, fR); });
+    sbtn('Xoay vòng', function () { swap(fT, fL); swap(fL, fR); });
+    var gs = t2.add('group'); gs.spacing = 4;
+    function num(label, v) { gs.add('statictext', undefined, label); var e = gs.add('edittext', undefined, String(v)); e.characters = 5; return e; }
+    var eA = num('Dài:', 0), eB = num('Rộng:', 0), eH = num('Cao:', 0);
     gs.add('statictext', undefined, 'px');
-    var gz = t2.add('group');
-    gz.add('statictext', undefined, 'Độ lớn khối:');
-    var sl = gz.add('slider', undefined, prefs.pct, 10, 200); sl.preferredSize.width = 230;
-    var tPct = gz.add('statictext', undefined, prefs.pct + '%'); tPct.preferredSize.width = 45;
-    var bAuto = gz.add('button', undefined, 'Về 100%');
-    var cbRatio = t2.add('checkbox', undefined, 'Khối theo tỉ lệ ảnh (2 mặt tường giữ trọn ảnh, ít bị cắt nhất)'); cbRatio.value = prefs.ratio;
-    t2.add('statictext', undefined, '100% = khối rộng bằng trung bình 3 ảnh gốc. Kéo thanh trượt để thu / phóng, hoặc gõ số px.');
-    var cbLock = t2.add('checkbox', undefined, 'Khóa khối: liên kết 3 layer và mask với ảnh (kéo đi cả khối)'); cbLock.value = prefs.lock;
-    t2.add('statictext', undefined, 'Muốn dịch ảnh trong 1 mặt: bấm biểu tượng xích giữa ảnh và mask cho tắt, kéo ảnh bằng V, rồi bấm lại.');
-    t2.add('statictext', undefined, 'Khối được dựng ngay chỗ 3 ảnh đang nằm, rồi gom vào 1 group tại chỗ.');
-    t2.add('statictext', undefined, 'Mẹo: chọn sẵn 3 layer (trên cùng = mặt trên, giữa = trái, dưới = phải) rồi mở tool.');
+    eA.helpTip = 'Dài theo trục phải (px)'; eB.helpTip = 'Rộng theo trục trái (px)';
+    var gz = t2.add('group'); gz.spacing = 4;
+    gz.add('statictext', undefined, 'Độ lớn:');
+    var sl = gz.add('slider', undefined, prefs.pct, 10, 200); sl.preferredSize.width = 190;
+    var tPct = gz.add('statictext', undefined, prefs.pct + '%'); tPct.preferredSize.width = 40;
+    var bAuto = gz.add('button', undefined, '100%'); bAuto.preferredSize = [48, 22];
+    sl.helpTip = '100% = khối rộng bằng trung bình 3 ảnh gốc.';
+    var go = t2.add('group'); go.spacing = 8;
+    var cbRatio = go.add('checkbox', undefined, 'Theo tỉ lệ ảnh (ít cắt)'); cbRatio.value = prefs.ratio;
+    cbRatio.helpTip = '2 mặt tường giữ trọn ảnh, chỉ mặt trên có thể bị cắt một ít.';
+    var cbLock = go.add('checkbox', undefined, 'Khóa khối (liên kết layer + mask)'); cbLock.value = prefs.lock;
+    cbLock.helpTip = 'Muốn dịch ảnh trong 1 mặt: bấm tắt biểu tượng xích giữa ảnh và mask, kéo bằng V, rồi bấm lại.';
 
     tabs.selection = (prefs.tab == 1) ? t2 : t1;
 
@@ -649,13 +671,23 @@ function showDialog(prefs, layers, selIds) {
     sizeFromSlider();
 
     // --- Xem trước + nút
-    var gp = w.add('group'); gp.alignment = 'fill';
-    var cbLive = gp.add('checkbox', undefined, 'Tự xem trước mỗi khi đổi'); cbLive.value = prefs.live;
+    var status = w.add('statictext', undefined, ' '); status.preferredSize = [420, 18];
+    var gp = w.add('group'); gp.alignment = 'fill'; gp.spacing = 4;
     var bPrev = gp.add('button', undefined, 'Xem trước');
-    var status = w.add('statictext', undefined, ' ', { multiline: true }); status.preferredSize = [460, 34];
-    var gEnd = w.add('group'); gEnd.alignment = 'right';
-    var bOK = gEnd.add('button', undefined, 'Xong', { name: 'ok' });
-    var bCancel = gEnd.add('button', undefined, 'Hủy', { name: 'cancel' });
+    var cbLive = gp.add('checkbox', undefined, 'Tự xem'); cbLive.value = prefs.live;
+    cbLive.helpTip = 'Tự xem trước mỗi khi đổi thiết lập (chậm hơn).';
+    var bHelp = gp.add('button', undefined, '?'); bHelp.preferredSize = [26, 22];
+    var sp = gp.add('group'); sp.alignment = ['fill', 'center'];
+    var bOK = gp.add('button', undefined, 'Xong', { name: 'ok' });
+    var bCancel = gp.add('button', undefined, 'Hủy', { name: 'cancel' });
+    bHelp.onClick = function () {
+        alert('Xoay ảnh Isometric v' + TOOL_VERSION + '\n\n' +
+            '• Xoay 1 ảnh: chọn ảnh, chọn mặt, bấm "Xem trước", ưng thì "Xong".\n' +
+            '• Khối hộp: chọn sẵn 3 layer (trên cùng = mặt trên, giữa = trái, dưới = phải) rồi mở tool. Khối dựng ngay chỗ 3 ảnh, gom 1 group tại chỗ.\n' +
+            '• Độ lớn 100% = khối rộng bằng trung bình 3 ảnh.\n' +
+            '• Dịch ảnh trong 1 mặt: bấm tắt biểu tượng xích giữa ảnh và mask, kéo bằng V, rồi bấm lại.\n' +
+            '• "Hủy" trả lại như lúc mở tool.\n\nKiểu góc đang chọn: ' + PRESETS[presetIdx()].note);
+    };
 
     function presetIdx() { return dd.selection ? dd.selection.index : 0; }
     function curFace() { return rTop.value ? 'top' : rRight.value ? 'right' : 'left'; }
@@ -707,10 +739,10 @@ function showDialog(prefs, layers, selIds) {
         else status.text = previewed ? 'Đã đổi thiết lập. Bấm "Xem trước" để xem lại, hoặc "Xong" để áp dụng luôn.' : 'Chọn xong thì bấm "Xem trước" để xem thử trên ảnh.';
     }
 
-    function refreshDrawing() { note.text = PRESETS[presetIdx()].note; try { pv.hide(); pv.show(); } catch (e) { } }
+    function refreshDrawing() { dd.helpTip = PRESETS[presetIdx()].note; try { pv.hide(); pv.show(); } catch (e) { } }
     pv.onDraw = function () {
         try {
-            var g = this.graphics, A = axes(PRESETS[presetIdx()]), sz = 45;
+            var g = this.graphics, A = axes(PRESETS[presetIdx()]), sz = 21;
             var F = [0, 0], La = [A.L[0] * sz, A.L[1] * sz], Ra = [A.R[0] * sz, A.R[1] * sz], Za = [A.Z[0] * sz, A.Z[1] * sz];
             var P = function (a, b) { return [a[0] + b[0], a[1] + b[1]]; };
             var hl = isCube() ? '' : curFace();
@@ -755,9 +787,12 @@ function showDialog(prefs, layers, selIds) {
         result = o; w.close(1);
     };
     bCancel.onClick = function () { revert(); w.close(2); };
-    w.onClose = function () { if (!result) revert(); };
+    w.onClose = function () {
+        if (!result) revert();
+        try { var fl = w.frameLocation, d = new ActionDescriptor(); d.putInteger(s('x'), fl[0]); d.putInteger(s('y'), fl[1]); app.putCustomOptions('XoayIsometric_win', d, true); } catch (e) { }
+    };
 
-    w.onShow = function () { refreshDrawing(); if (cbLive.value) preview(false); };
+    w.onShow = function () { placeWindow(w); refreshDrawing(); if (cbLive.value) preview(false); };
     w.show();
     return result;
 }
