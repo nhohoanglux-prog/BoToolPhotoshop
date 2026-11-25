@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Tool Launcher</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="top">
+    <input id="search" type="text" placeholder="Tìm tool… (gõ không dấu cũng được)" autocomplete="off" spellcheck="false">
+    <div id="bar">
+      <button id="btnFolder" title="Chọn thư mục chứa tool">📁 Thư mục</button>
+      <button id="btnReload" title="Quét lại thư mục (sau khi thêm tool mới)">⟳ Làm mới</button>
+      <button id="btnUpdate" title="Tải bản mới của panel và các tool">⬇ Cập nhật</button>
+      <button id="btnOpen" title="Mở thư mục trong File Explorer">↗</button>
+    </div>
+  </div>
+  <div id="list"></div>
+  <div id="status"></div>
+  <div id="ver"></div>
+  <script src="js/main.js"></script>
+</body>
+</html>

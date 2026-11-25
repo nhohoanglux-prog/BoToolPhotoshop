@@ -1,0 +1,27 @@
+{
+  "panel": {
+    "version": "1.1.0",
+    "date": "2026-11-25",
+    "files": [
+      "CSXS/manifest.xml",
+      "css/style.css",
+      "index.html",
+      "js/main.js",
+      "jsx/host.jsx"
+    ]
+  },
+  "tools": [
+    {
+      "path": "DanhSoArtboard.jsx",
+      "name": "Đánh số Artboard",
+      "version": "1.0.0",
+      "date": "2026-11-25"
+    },
+    {
+      "path": "XuatArtboardNen.jsx",
+      "name": "Xuất artboard nén theo dung lượng",
+      "version": "1.0.0",
+      "date": "2026-11-25"
+    }
+  ]
+}

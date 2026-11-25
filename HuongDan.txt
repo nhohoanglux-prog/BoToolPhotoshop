@@ -1,0 +1,18 @@
+﻿BỘ TOOL PHOTOSHOP – HƯỚNG DẪN CÀI (làm một lần)
+
+1. Giải nén file zip này ra (chuột phải > Extract All).
+2. Chép thư mục "2_ThuMucTool" tới chỗ cố định, ví dụ D:\ToolPhotoshop
+   (hoặc chép các file .jsx bên trong vào thư mục tool bạn đã tạo).
+3. Tắt Photoshop. Mở thư mục "1_CaiPanel", nhấp đúp "CaiDat.bat".
+   Nếu Windows hiện cảnh báo xanh: bấm "More info" > "Run anyway".
+4. Mở Photoshop > Window > Extensions (legacy) > Tool Launcher.
+   Kéo bảng vào cạnh bảng Layers.
+5. Bấm "📁 Thư mục", chọn thư mục ở bước 2. Xong.
+
+DÙNG
+- Gõ tìm (không dấu cũng được), bấm vào tool là chạy.
+- Mỗi tool ghi phiên bản (v1.0.0) và ngày cập nhật. Cuối bảng ghi phiên bản của panel.
+- Nút "⬇ Cập nhật": bấm một lần là tải bản mới của panel và các tool về.
+  Khi có bản mới, nút này chuyển màu xanh và hiện số lượng.
+
+GỠ: tắt Photoshop, chạy "1_CaiPanel\GoCaiDat.bat".
