@@ -3,7 +3,7 @@
   @name: Xoay ảnh Isometric
   @group: Hình chiếu trục đo
   @desc: Biến ảnh phẳng thành mặt trên / mặt trái / mặt phải theo góc isometric, dimetric, 45°, 30/60, cavalier… (giữ Smart Object) và dựng khối hộp từ 3 ảnh.
-  @version: 1.6.0
+  @version: 1.6.1
   @date: 2026-11-25
 
   XoayIsometric.jsx
@@ -16,7 +16,7 @@
   Dùng cho Photoshop 2021/2022 trở lên. CHƯA thử trên Photoshop thật.
 */
 
-var TOOL_VERSION = '1.6.0';
+var TOOL_VERSION = '1.6.1';
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
 
@@ -587,7 +587,7 @@ function showDialog(prefs, layers, selIds) {
     var rTop = gf.add('radiobutton', undefined, 'Mặt trên');
     var rLeft = gf.add('radiobutton', undefined, 'Mặt trái');
     var rRight = gf.add('radiobutton', undefined, 'Mặt phải');
-    (prefs.face == 'top' ? rTop : prefs.face == 'right' ? rRight : rLeft).value = true;
+    (prefs.face == 'top' ? rTop : (prefs.face == 'right' ? rRight : rLeft)).value = true;
     var g2 = t1.add('group');
     g2.add('statictext', undefined, 'Xoay ảnh:');
     var ddRot = g2.add('dropdownlist', undefined, ['0°', '90°', '180°', '270°']); ddRot.selection = Math.round(prefs.rot / 90) % 4;
@@ -690,7 +690,7 @@ function showDialog(prefs, layers, selIds) {
     };
 
     function presetIdx() { return dd.selection ? dd.selection.index : 0; }
-    function curFace() { return rTop.value ? 'top' : rRight.value ? 'right' : 'left'; }
+    function curFace() { return rTop.value ? 'top' : (rRight.value ? 'right' : 'left'); }
     function isCube() { return tabs.selection == t2; }
     function collect() {
         var o = { preset: presetIdx(), rot: (ddRot.selection ? ddRot.selection.index : 0) * 90, keep: cbKeep.value, flip: cbFlip.value,

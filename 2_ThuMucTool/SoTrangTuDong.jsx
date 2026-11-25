@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), chọn vị trí riêng cho trang chẵn / lẻ; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.5.2
+  @version: 1.6.0
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.5.2';
+var TOOL_VERSION = '1.6.0';
 var TAG = '[Số trang]';
 var LOG = [], STEPS = [], DIAG = '';   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
 var c = function (x) { return charIDToTypeID(x); };
@@ -105,7 +105,7 @@ function styleFromString(str, o) {
         if (p.length < 2 || !o.hasOwnProperty(p[0])) continue;
         var v = decodeURIComponent(p[1]);
         var t = typeof o[p[0]];
-        o[p[0]] = t == 'number' ? (parseFloat(v) || 0) : t == 'boolean' ? (v == 'true') : v;
+        o[p[0]] = t == 'number' ? (parseFloat(v) || 0) : (t == 'boolean' ? (v == 'true') : v);
         got = true;
     }
     return got;
@@ -287,7 +287,7 @@ function applyAll(st, arts, fxFromId, limit) {
 
         var ti = lyr.textItem;
         try { if (ti.kind != TextType.POINTTEXT) ti.kind = TextType.POINTTEXT; } catch (e) { }
-        var just = h == 0 ? Justification.LEFT : h == 1 ? Justification.CENTER : Justification.RIGHT;
+        var just = h == 0 ? Justification.LEFT : (h == 1 ? Justification.CENTER : Justification.RIGHT);
         try { if (ti.justification != just) ti.justification = just; } catch (e) { }
         ti.contents = txt;
         if (font) ti.font = font;
@@ -311,8 +311,8 @@ function applyAll(st, arts, fxFromId, limit) {
         var gx = 1, gy = 1, method = 0;   // 0 = DOM translate, 1 = AM move
         for (var tr = 0; tr < 8; tr++) {
             var lw = b.R - b.L, lh = b.B - b.T;
-            var tx = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + (ab.w - lw) / 2 : ab.left + ab.w - st.mx - lw;
-            var ty = v == 0 ? ab.top + st.my : v == 1 ? ab.top + (ab.h - lh) / 2 : ab.top + ab.h - st.my - lh;
+            var tx = h == 0 ? ab.left + st.mx : (h == 1 ? ab.left + (ab.w - lw) / 2 : ab.left + ab.w - st.mx - lw);
+            var ty = v == 0 ? ab.top + st.my : (v == 1 ? ab.top + (ab.h - lh) / 2 : ab.top + ab.h - st.my - lh);
             var ex = tx - b.L, ey = ty - b.T;
             if (Math.abs(ex) < 1 && Math.abs(ey) < 1) break;
             var mx = Math.abs(ex) < 1 ? 0 : Math.round(ex / gx), my = Math.abs(ey) < 1 ? 0 : Math.round(ey / gy);
@@ -330,18 +330,18 @@ function applyAll(st, arts, fxFromId, limit) {
         STEPS = moves.slice(0);
         var aligned = false;
         var lw2 = b.R - b.L;
-        var want = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + (ab.w - lw2) / 2 : ab.left + ab.w - st.mx - lw2;
+        var want = h == 0 ? ab.left + st.mx : (h == 1 ? ab.left + (ab.w - lw2) / 2 : ab.left + ab.w - st.mx - lw2);
         var off = Math.round(b.L - want);
-        LOG.push('Trang ' + (i + 1) + ' (' + ab.name + ') ' + (h == 0 ? 'TRÁI' : h == 1 ? 'GIỮA' : 'PHẢI') +
+        LOG.push('Trang ' + (i + 1) + ' (' + ab.name + ') ' + (h == 0 ? 'TRÁI' : (h == 1 ? 'GIỮA' : 'PHẢI')) +
             ' | artboard x ' + Math.round(ab.left) + '..' + Math.round(ab.left + ab.w) + ' y ' + Math.round(ab.top) + '..' + Math.round(ab.top + ab.h) +
             ' | chữ lúc đầu x ' + Math.round(b0.L) + '..' + Math.round(b0.R) + ' | dời ' + (moves.join(' ; ') || 'không') +
             ' | chữ sau x ' + Math.round(b.L) + '..' + Math.round(b.R) + ' y ' + Math.round(b.T) + '..' + Math.round(b.B) + ' | lệch ' + off);
         LOG.push('    các bước (x trái..phải / y trên..dưới): ' + STEPS.join(' | '));
-        if (!DIAG && (Math.abs(off) > 3 || (limit > 0 && h == 0))) {
+        if (!DIAG && Math.abs(off) > 3) {
             var abB = layerBoundsById(ab.id), dom = '';
             try { var db = lyr.bounds; dom = Math.round(px(db[0])) + '..' + Math.round(px(db[2])); } catch (e) { }
             DIAG = 'THÔNG TIN KIỂM TRA (chụp màn hình gửi Claude giúp mình):\n' +
-                'Trang thứ ' + (i + 1) + ' "' + ab.name + '" ' + (h == 0 ? 'TRÁI' : h == 1 ? 'GIỮA' : 'PHẢI') + ' (cột ' + ab.col + '/' + ab.rowLen + '), lệch ' + off + ' px\n' +
+                'Trang thứ ' + (i + 1) + ' "' + ab.name + '" ' + (h == 0 ? 'TRÁI' : (h == 1 ? 'GIỮA' : 'PHẢI')) + ' (cột ' + ab.col + '/' + ab.rowLen + '), lệch ' + off + ' px\n' +
                 'Khổ file: ' + Math.round(px(doc.width)) + ' x ' + Math.round(px(doc.height)) + ' px\n' +
                 'Artboard (artboardRect): x ' + Math.round(ab.left) + '..' + Math.round(ab.left + ab.w) + ', y ' + Math.round(ab.top) + '..' + Math.round(ab.top + ab.h) + '\n' +
                 'Artboard (bounds layer): ' + abB + '\n' +
@@ -382,13 +382,13 @@ function makeTextLayer(doc, set, ab, txt, st, h, v, res) {
     t.putString(c('Txt '), txt);
     var p = new ActionDescriptor();
     // Đặt ngay gần chỗ đúng, canh lề chữ có sẵn từ lúc tạo (không đổi canh lề sau)
-    var x = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + ab.w / 2 : ab.left + ab.w - st.mx;
-    var y = v == 0 ? ab.top + st.my + st.size : v == 1 ? ab.top + ab.h / 2 : ab.top + ab.h - st.my;
+    var x = h == 0 ? ab.left + st.mx : (h == 1 ? ab.left + ab.w / 2 : ab.left + ab.w - st.mx);
+    var y = v == 0 ? ab.top + st.my + st.size : (v == 1 ? ab.top + ab.h / 2 : ab.top + ab.h - st.my);
     p.putUnitDouble(c('Hrzn'), c('#Prc'), x / W * 100);
     p.putUnitDouble(c('Vrtc'), c('#Prc'), y / H * 100);
     t.putObject(c('TxtC'), c('Pnt '), p);
     var ps = new ActionDescriptor();
-    ps.putEnumerated(c('Algn'), c('Alg '), h == 0 ? c('Left') : h == 1 ? c('Cntr') : c('Rght'));
+    ps.putEnumerated(c('Algn'), c('Alg '), h == 0 ? c('Left') : (h == 1 ? c('Cntr') : c('Rght')));
     var pr = new ActionDescriptor();
     pr.putInteger(c('From'), 0); pr.putInteger(c('T   '), txt.length + 1);
     pr.putObject(s('paragraphStyle'), s('paragraphStyle'), ps);
@@ -427,11 +427,11 @@ function alignInArtboard(lyr, h, v, mx, my) {
         }
         function fm(b) { return Math.round(b.L) + '..' + Math.round(b.R) + ' / ' + Math.round(b.T) + '..' + Math.round(b.B); }
         STEPS = ['tạo xong ' + fm(measureLayer(lyr))];
-        al(h == 0 ? 'ADSLefts' : h == 1 ? 'ADSCentersH' : 'ADSRights');
+        al(h == 0 ? 'ADSLefts' : (h == 1 ? 'ADSCentersH' : 'ADSRights'));
         STEPS.push('canh ngang ' + fm(measureLayer(lyr)));
-        al(v == 0 ? 'ADSTops' : v == 1 ? 'ADSCentersV' : 'ADSBottoms');
+        al(v == 0 ? 'ADSTops' : (v == 1 ? 'ADSCentersV' : 'ADSBottoms'));
         STEPS.push('canh dọc ' + fm(measureLayer(lyr)));
-        var dx = h == 0 ? mx : h == 2 ? -mx : 0, dy = v == 0 ? my : v == 2 ? -my : 0;
+        var dx = h == 0 ? mx : (h == 2 ? -mx : 0), dy = v == 0 ? my : (v == 2 ? -my : 0);
         if (dx || dy) moveLayerBy(lyr, dx, dy);
         STEPS.push('dời lề ' + fm(measureLayer(lyr)));
         return true;
@@ -614,9 +614,9 @@ function styleFromActive(st, arts) {
             var ab = arts[i], b = l.boundsNoEffects || l.bounds;
             var L = px(b[0]) - ab.left, T = px(b[1]) - ab.top, R = ab.left + ab.w - px(b[2]), B = ab.top + ab.h - px(b[3]);
             var cx = (L + (ab.w - R)) / 2 / ab.w, cy = (T + (ab.h - B)) / 2 / ab.h;
-            var h = cx < 1 / 3 ? 0 : cx > 2 / 3 ? 2 : 1, v = cy < 1 / 3 ? 0 : cy > 2 / 3 ? 2 : 1;
-            o.mx = Math.round(h == 0 ? L : h == 2 ? R : st.mx);
-            o.my = Math.round(v == 0 ? T : v == 2 ? B : st.my);
+            var h = cx < 1 / 3 ? 0 : (cx > 2 / 3 ? 2 : 1), v = cy < 1 / 3 ? 0 : (cy > 2 / 3 ? 2 : 1);
+            o.mx = Math.round(h == 0 ? L : (h == 2 ? R : st.mx));
+            o.my = Math.round(v == 0 ? T : (v == 2 ? B : st.my));
             o.pos = v * 3 + h;
             o.even = pageNum(st, arts, i) % 2 == 0;
             break;

@@ -1,6 +1,8 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- SoTrangTuDong.jsx v1.6.0: ĐÃ TÌM RA lỗi số trang trái nằm giữa: Photoshop hiểu sai một kiểu câu lệnh chọn trái/giữa/phải nên "trái" bị đọc thành "giữa". Đã sửa, số trang chẵn giờ nằm đúng góc trái; bỏ bảng thông tin kiểm tra.
+- XoayIsometric.jsx v1.6.1: sửa cùng loại lỗi đó ở chỗ chọn mặt Trên/Trái/Phải (chọn "Trên" có thể bị hiểu thành "Phải").
 - SoTrangTuDong.jsx v1.5.2: bảng "Thông tin kiểm tra" chi tiết hơn (vị trí điểm ảnh thật của số, layer nào đang được dời, mọi layer chữ cùng số trong file) để tìm đúng lỗi số trang trái nằm giữa.
 - SoTrangTuDong.jsx v1.5.1: font mặc định Montserrat (máy không có thì Arial); khi mở tool, nếu tìm thấy số trang cũ do bản trước tạo thừa (thường là số nằm giữa trang trái) thì hỏi bạn có xoá không.
 - SoTrangTuDong.jsx v1.5.0: bỏ ô "Đối xứng trang đôi", thay bằng 2 ô chọn vị trí riêng: "Trang chẵn" (mặc định Dưới trái) và "Trang lẻ" (mặc định Dưới phải), tính theo số trang hiện trên trang.
