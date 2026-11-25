@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), chọn vị trí riêng cho trang chẵn / lẻ; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.5.0
+  @version: 1.5.1
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.5.0';
+var TOOL_VERSION = '1.5.1';
 var TAG = '[Số trang]';
 var LOG = [], STEPS = [], DIAG = '';   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
 var c = function (x) { return charIDToTypeID(x); };
@@ -136,13 +136,41 @@ function saveLastStyle(str) {
     try { var d = new ActionDescriptor(); d.putString(s('v'), str); app.putCustomOptions('SoTrangTuDong_last', d, true); } catch (e) { }
 }
 
+// Người dùng muốn mặc định Montserrat; máy không có thì dùng Arial
+function pickDefaultFont() {
+    var c2 = ['Montserrat-Regular', 'Montserrat-Medium', 'Montserrat'];
+    for (var i = 0; i < c2.length; i++) if (fontExists(c2[i])) return c2[i];
+    try { for (var k = 0; k < app.fonts.length; k++) { var f = app.fonts[k]; if (/^Montserrat/i.test(f.name) && /Regular/i.test(f.style)) return f.postScriptName; } } catch (e) { }
+    return 'ArialMT';
+}
+// Tìm số trang CŨ không có nhãn "[Số trang]" (bản 1.0.x có thể tạo thừa 1 layer chữ tên "02" nằm giữa trang,
+// tool không nhận ra nên không bao giờ xoá). Điều kiện chặt: layer chữ, tên đúng bằng nội dung, dạng số trang.
+var ORPHAN_RE = /^(Trang\s*)?\d{1,3}(\s*[\/—–-]\s*\d{1,3})?$/;
+function findOrphans(doc, arts) {
+    var out = [];
+    function walk(set, ab) {
+        for (var i = 0; i < set.layers.length; i++) {
+            var l = set.layers[i];
+            if (l.typename == 'LayerSet') { walk(l, ab); continue; }
+            try {
+                if (l.kind != LayerKind.TEXT || l.name.indexOf(TAG) == 0) continue;
+                var nm = l.name.replace(/^\s+|\s+$/g, '');
+                if (!ORPHAN_RE.test(nm)) continue;
+                var ct = String(l.textItem.contents).replace(/^\s+|\s+$/g, '');
+                if (ct == nm) out.push({ layer: l, ab: ab, name: nm });
+            } catch (e) { }
+        }
+    }
+    for (var i = 0; i < arts.length; i++) { var set = layerSetById(doc, arts[i].id); if (set) walk(set, arts[i].name); }
+    return out;
+}
 function defaultStyle(arts) {
     var minSide = 3000;
     if (arts.length) minSide = Math.min(arts[0].w, arts[0].h);
     return {
         styleIdx: 0, tpl: '{so}', posEven: 6, posOdd: 8,
         mx: Math.max(10, Math.round(minSide * 0.04)), my: Math.max(10, Math.round(minSide * 0.03)),
-        font: 'ArialMT', size: Math.max(8, Math.round(minSide * 0.018)), color: '333333',
+        font: pickDefaultFont(), size: Math.max(8, Math.round(minSide * 0.018)), color: '333333',
         fromPage: 2, start: 2, skipLast: false, skipList: '', pad: true
     };
 }
@@ -810,9 +838,19 @@ function main() {
     app.preferences.rulerUnits = Units.PIXELS;
     app.preferences.typeUnits = TypeUnits.POINTS;
     try {
+        var orph = findOrphans(doc, arts);
+        if (orph.length) {
+            var ex = []; for (var q = 0; q < orph.length && q < 4; q++) ex.push('"' + orph[q].name + '" ở ' + orph[q].ab);
+            if (confirm('Tìm thấy ' + orph.length + ' số trang CŨ do bản trước tạo thừa (layer chữ không có nhãn [Số trang]), ví dụ ' + ex.join(', ') +
+                    '.\nĐây có thể là số nằm giữa trang trái.\n\nXoá các layer này? (Ctrl+Z để lấy lại)')) {
+                $.global.__ORPH = orph;
+                doc.suspendHistory('Xoá số trang cũ', 'for (var __i = 0; __i < $.global.__ORPH.length; __i++) { try { $.global.__ORPH[__i].layer.remove(); } catch (e) { } }');
+            }
+        }
         var st = defaultStyle(arts);
         var saved = loadDocStyle(doc);
         if (!styleFromString(saved, st)) styleFromString(loadLastStyle(), st);
+        if (st.font == 'ArialMT') st.font = pickDefaultFont();   // kiểu cũ lưu Arial: đổi sang Montserrat nếu có
         var fromActive = styleFromActive(st, arts);
         if (fromActive) {
             st.font = fromActive.font; st.size = fromActive.size; st.color = fromActive.color;

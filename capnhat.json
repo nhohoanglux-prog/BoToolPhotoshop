@@ -31,9 +31,9 @@
     {
       "path": "SoTrangTuDong.jsx",
       "name": "Số trang tự động",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "date": "2026-11-25",
-      "notes": "Bỏ ô \"Đối xứng trang đôi\", thay bằng 2 ô chọn vị trí riêng: \"Trang chẵn\" (mặc định Dưới trái) và \"Trang lẻ\" (mặc định Dưới phải), tính theo số trang hiện trên trang."
+      "notes": "Font mặc định Montserrat (máy không có thì Arial); khi mở tool, nếu tìm thấy số trang cũ do bản trước tạo thừa (thường là số nằm giữa trang trái) thì hỏi bạn có xoá không."
     },
     {
       "path": "XoayIsometric.jsx",
@@ -51,6 +51,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "SoTrangTuDong.jsx v1.5.1: font mặc định Montserrat (máy không có thì Arial); khi mở tool, nếu tìm thấy số trang cũ do bản trước tạo thừa (thường là số nằm giữa trang trái) thì hỏi bạn có xoá không."
+    },
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.5.0: bỏ ô \"Đối xứng trang đôi\", thay bằng 2 ô chọn vị trí riêng: \"Trang chẵn\" (mặc định Dưới trái) và \"Trang lẻ\" (mặc định Dưới phải), tính theo số trang hiện trên trang."
@@ -86,10 +90,6 @@
     {
       "date": "2026-11-25",
       "text": "XuatArtboardNen.jsx v1.6.0: nút \"Dừng\" (hoặc Esc) trong khung tiến độ khi đang xuất; dừng là hủy ngay, không để lại file xuất dở, file PSD vẫn nguyên."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "CheDoNhe.jsx v1.1.0: nút \"Dừng\" (hoặc Esc) khi đang làm nhẹ / trả ảnh gốc; dừng là file trả về như lúc trước khi chạy, ảnh gốc vẫn nguyên."
     }
   ]
 }

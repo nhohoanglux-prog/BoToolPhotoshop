@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- SoTrangTuDong.jsx v1.5.1: font mặc định Montserrat (máy không có thì Arial); khi mở tool, nếu tìm thấy số trang cũ do bản trước tạo thừa (thường là số nằm giữa trang trái) thì hỏi bạn có xoá không.
 - SoTrangTuDong.jsx v1.5.0: bỏ ô "Đối xứng trang đôi", thay bằng 2 ô chọn vị trí riêng: "Trang chẵn" (mặc định Dưới trái) và "Trang lẻ" (mặc định Dưới phải), tính theo số trang hiện trên trang.
 - SoTrangTuDong.jsx v1.4.1: tự xoá các số trang cũ bị sót NGOÀI artboard từ những lần chạy trước (chúng hiện đè ở giữa trang trái mà tool không thấy); số mới luôn nằm trên cùng, trực tiếp trong artboard; "Gỡ hết số" xoá luôn số sót.
 - SoTrangTuDong.jsx v1.4.0: sửa lỗi số trang trái nằm giữa theo số liệu bạn gửi: tool dời số rồi đo lại xem số thật sự đi tới đâu, tự chỉnh cho tới khi đúng góc; bảng "Thông tin kiểm tra" chỉ hiện khi số còn lệch.
