@@ -3,14 +3,15 @@
     'use strict';
 
     // ===== Phiên bản panel – tăng số này mỗi lần sửa panel =====
-    var PANEL_VERSION = '1.1.0';
+    var PANEL_VERSION = '1.2.0';
     var PANEL_DATE = '2026-11-25';
     // Nơi lấy bản mới (kho GitHub công khai, cùng cấu trúc với file zip)
     var UPDATE_BASE = 'https://raw.githubusercontent.com/nhohoanglux-prog/BoToolPhotoshop/main/';
 
     var cep = window.__adobe_cep__;
     var KEY_FOLDER = 'tl.folder', KEY_RECENT = 'tl.recent', KEY_CLOSED = 'tl.closed';
-    var tools = [], visible = [], selIndex = 0, busy = false;
+    var KEY_SEEN = 'tl.seen', NEW_DAYS = 7;
+    var tools = [], visible = [], selIndex = 0, busy = false, lastInfo = null;
 
     var $ = function (id) { return document.getElementById(id); };
     var searchEl = $('search'), listEl = $('list'), statusEl = $('status');
@@ -58,6 +59,7 @@
             tools = data.tools || [];
             tools.sort(function (a, b) { return a.name.localeCompare(b.name, 'vi'); });
             tools.forEach(function (t) { t.key = fold(t.name + ' ' + t.desc + ' ' + t.group + ' ' + t.file); });
+            markNewTools();
             render();
             setStatus(tools.length + ' tool · ' + folder);
         });
@@ -128,7 +130,7 @@
                 var el = document.createElement('div');
                 el.className = 'tool';
                 el.title = t.path;
-                el.innerHTML = '<div class="name">' + highlight(t.name, words) + '</div>' + (t.desc ? '<div class="desc">' + highlight(t.desc, words) + '</div>' : '') +
+                el.innerHTML = '<div class="name">' + highlight(t.name, words) + (t.isNew ? '<span class="badge" title="Tool mới hoặc vừa được cập nhật">MỚI</span>' : '') + '</div>' + (t.desc ? '<div class="desc">' + highlight(t.desc, words) + '</div>' : '') +
                     (t.version || t.date ? '<div class="ver">' + (t.version ? 'v' + esc(t.version) : '') + (t.version && t.date ? ' · ' : '') + (t.date ? 'cập nhật ' + esc(fmtDate(t.date)) : '') + '</div>' : '');
                 el.onclick = function () { runTool(t, el); };
                 if (!closed[g]) { el.dataset.idx = visible.length; visible.push({ t: t, el: el }); }
@@ -156,10 +158,67 @@
             if (el) el.classList.remove('running');
             if (res && res.indexOf('ERR:') === 0) { setStatus('Lỗi khi chạy “' + t.name + '”: ' + res.slice(4), true); return; }
             setStatus('Đã chạy xong: ' + t.name);
+            clearNew(t);
             var recent = loadJSON(KEY_RECENT, []).filter(function (p) { return p !== t.path; });
             recent.unshift(t.path);
             store(KEY_RECENT, JSON.stringify(recent.slice(0, 5)));
-            if (!searchEl.value) render();
+            render();
+        });
+    }
+
+    // ---- Nhãn MỚI: tool mới thêm hoặc vừa đổi phiên bản, hiện 7 ngày hoặc tới khi chạy ----
+    function markNewTools() {
+        var seen = loadJSON(KEY_SEEN, null), first = !seen, now = Date.now();
+        seen = seen || {};
+        tools.forEach(function (t) {
+            var k = t.file.toLowerCase(), s = seen[k];
+            if (!s || s.v !== t.version) seen[k] = { v: t.version, until: first ? 0 : now + NEW_DAYS * 864e5 };
+            t.isNew = seen[k].until > now;
+        });
+        store(KEY_SEEN, JSON.stringify(seen));
+    }
+    function clearNew(t) {
+        var seen = loadJSON(KEY_SEEN, {}), k = t.file.toLowerCase();
+        if (seen[k]) { seen[k].until = 0; store(KEY_SEEN, JSON.stringify(seen)); }
+        t.isNew = false;
+    }
+
+    // ---- Khung "Có gì mới" ----
+    var newsEl = $('news');
+    function hideNews() { newsEl.hidden = true; newsEl.innerHTML = ''; }
+    function showNews(title, items, buttons) {
+        var html = '<div class="nt">' + esc(title) + '</div><ul>';
+        items.forEach(function (it) {
+            html += '<li>' + esc(it.label) + (it.notes ? '<br><span class="nn">' + esc(it.notes) + '</span>' : '') + '</li>';
+        });
+        html += '</ul><div class="nb"></div>';
+        newsEl.innerHTML = html;
+        var nb = newsEl.querySelector('.nb');
+        buttons.forEach(function (b) {
+            var el = document.createElement('button');
+            el.textContent = b.text; if (b.primary) el.className = 'primary';
+            el.onclick = b.onClick; nb.appendChild(el);
+        });
+        newsEl.hidden = false;
+    }
+    function showPending(jobs) {
+        showNews('🔔 Có ' + jobs.length + ' bản mới', jobs, [
+            { text: '⬇ Cập nhật ngay', primary: true, onClick: runUpdate },
+            { text: 'Để sau', onClick: hideNews }
+        ]);
+    }
+    function showChangelog() {
+        var go = function (info) {
+            var items = (info && info.news || []).map(function (n) { return { label: fmtDate(n.date) + ' · ' + n.text }; });
+            if (!items.length) items = [{ label: 'Chưa có ghi chú cập nhật.' }];
+            showNews('📋 Có gì mới gần đây', items, [{ text: 'Đóng', onClick: hideNews }]);
+        };
+        if (lastInfo) return go(lastInfo);
+        setStatus('Đang tải ghi chú cập nhật…');
+        httpGet(UPDATE_BASE + 'capnhat.json', function (err, txt) {
+            setStatus(err ? 'Không tải được ghi chú: ' + err : '', !!err);
+            try { lastInfo = JSON.parse(txt.replace(/^\uFEFF/, '')); } catch (e) {}
+            go(lastInfo);
         });
     }
 
@@ -199,10 +258,11 @@
         httpGet(UPDATE_BASE + 'capnhat.json', function (err, txt) {
             if (err) return cb(/Lỗi 404/.test(err) ? 'Kho GitHub chưa có bản cập nhật nào.' : err);
             var info;
-            try { info = JSON.parse(txt.replace(/^﻿/, '')); } catch (e) { return cb('File capnhat.json bị lỗi'); }
+            try { info = JSON.parse(txt.replace(/^\uFEFF/, '')); } catch (e) { return cb('File capnhat.json bị lỗi'); }
+            lastInfo = info;
             var jobs = [];
             if (info.panel && cmpVer(info.panel.version, PANEL_VERSION) > 0) {
-                jobs.push({ kind: 'panel', label: 'Panel Tool Launcher v' + PANEL_VERSION + ' → v' + info.panel.version, files: info.panel.files || [], version: info.panel.version });
+                jobs.push({ kind: 'panel', label: 'Panel Tool Launcher v' + PANEL_VERSION + ' → v' + info.panel.version, files: info.panel.files || [], version: info.panel.version, notes: info.panel.notes || '' });
             }
             var folder = store(KEY_FOLDER);
             (info.tools || []).forEach(function (r) {
@@ -212,7 +272,8 @@
                 jobs.push({
                     kind: 'tool', src: r.path,
                     dest: local ? local.path : folder + '\\' + r.path.replace(/\//g, '\\'),
-                    label: (r.name || r.path) + (local ? ' v' + (local.version || '?') + ' → v' : ' (mới) v') + r.version
+                    label: (r.name || r.path) + (local ? ' v' + (local.version || '?') + ' → v' : ' (tool mới) v') + r.version,
+                    notes: r.notes || ''
                 });
             });
             cb(null, jobs, info);
@@ -226,7 +287,8 @@
         setStatus('Đang kiểm tra bản mới…');
         checkUpdates(function (err, jobs) {
             if (err) { busy = false; setStatus(err, true); return; }
-            if (!jobs.length) { busy = false; markUpdate(false); setStatus('Bạn đang dùng bản mới nhất.'); return; }
+            if (!jobs.length) { busy = false; markUpdate(false); hideNews(); setStatus('Bạn đang dùng bản mới nhất (panel v' + PANEL_VERSION + ').'); return; }
+            hideNews();
             // 1) tải hết về trước, 2) rồi mới ghi đè (tránh hỏng giữa chừng)
             var downloads = [];
             jobs.forEach(function (j) {
@@ -239,7 +301,7 @@
                 setStatus('Đang tải ' + (i + 1) + '/' + downloads.length + '…');
                 httpGet(downloads[i].url, function (e, txt) {
                     if (e) { busy = false; setStatus(e + '. Chưa thay đổi gì.', true); return; }
-                    downloads[i].text = txt.replace(/^﻿/, '');
+                    downloads[i].text = txt.replace(/^\uFEFF/, '');
                     i++; next();
                 });
             })();
@@ -257,14 +319,21 @@
                 function done() {
                     busy = false;
                     markUpdate(false);
-                    var msg = 'Đã cập nhật: ' + jobs.map(function (j) { return j.label; }).join('; ');
+                    var msg = 'Đã cập nhật ' + jobs.length + ' mục.';
+                    store('tl.lastUpdate', JSON.stringify(jobs.map(function (j) { return { label: j.label, notes: j.notes }; })));
                     store('tl.lastUpdateMsg', msg);
                     if (panelChanged) {
                         hostCall('TL_reloadHost', [extensionPath() + '/jsx/host.jsx'], function () { location.reload(); });
-                    } else { reload(); setTimeout(function () { setStatus(msg); }, 600); }
+                    } else { reload(); setTimeout(function () { setStatus(msg); showJustUpdated(); }, 600); }
                 }
             }
         });
+    }
+
+    function showJustUpdated() {
+        var items = loadJSON('tl.lastUpdate', null);
+        try { localStorage.removeItem('tl.lastUpdate'); } catch (e) {}
+        if (items && items.length) showNews('✓ Vừa cập nhật xong', items, [{ text: 'Đóng', onClick: hideNews }]);
     }
 
     function markUpdate(on, n) {
@@ -288,14 +357,21 @@
     $('btnOpen').onclick = function () { var f = store(KEY_FOLDER); if (f) call('TL_openFolder', f); else pickFolder(); };
 
     if (cep) applyTheme();
-    $('ver').textContent = 'Tool Launcher v' + PANEL_VERSION + ' · cập nhật ' + fmtDate(PANEL_DATE);
+    $('ver').innerHTML = 'Tool Launcher v' + PANEL_VERSION + ' · ' + fmtDate(PANEL_DATE) + ' · <a id="lnkNews">Có gì mới ›</a>';
+    $('lnkNews').onclick = showChangelog;
     reload();
     // Thông báo sau khi panel vừa tự cập nhật và tải lại
+    // Lần đầu mở một phiên bản panel mới: tự hiện "Có gì mới"
+    if (cep && store('tl.panelSeen') !== PANEL_VERSION) {
+        var firstRun = !store(KEY_FOLDER); // cài mới tinh thì không cần hiện
+        store('tl.panelSeen', PANEL_VERSION);
+        if (!firstRun) setTimeout(function () { if (newsEl.hidden) showChangelog(); }, 1200);
+    }
     var last = store('tl.lastUpdateMsg');
-    if (last) { try { localStorage.removeItem('tl.lastUpdateMsg'); } catch (e) {} setTimeout(function () { setStatus(last); }, 900); }
+    if (last) { try { localStorage.removeItem('tl.lastUpdateMsg'); } catch (e) {} setTimeout(function () { setStatus(last); showJustUpdated(); }, 900); }
     // Tự kiểm tra bản mới khi mở panel (chỉ báo, không tự cài)
     if (cep) setTimeout(function () {
-        checkUpdates(function (err, jobs) { if (!err && jobs.length) markUpdate(true, jobs.length); });
+        checkUpdates(function (err, jobs) { if (!err && jobs.length) { markUpdate(true, jobs.length); if (newsEl.hidden) showPending(jobs); } });
     }, 2500);
     // Tự quét lại khi mở lại panel (để thấy tool mới thêm)
     document.addEventListener('visibilitychange', function () { if (!document.hidden) reload(); });

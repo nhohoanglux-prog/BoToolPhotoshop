@@ -40,11 +40,15 @@ HuongDan.txt                      hướng dẫn cài 5 bước (UTF-8 có BOM, 
 ```
 
 ## Khi sửa hoặc thêm tool / panel
+Kho này là bản gốc duy nhất (bản trong /mnt/project-files chỉ là bản sao, có thể cũ).
 1. Sửa code. Tăng `@version` và `@date` của tool đó (sửa nhỏ: 1.0.1, thêm tính năng: 1.1.0).
-   Sửa panel thì tăng `PANEL_VERSION`, `PANEL_DATE` trong `js/main.js` (và Version trong manifest.xml).
-2. Cập nhật `capnhat.json` (version/date tool, danh sách file panel) cho khớp.
-3. Ghi một dòng vào `CHANGELOG.md`, commit, push lên `main`.
-4. Báo người dùng: chỉ cần bấm "⬇ Cập nhật" trong panel. Chỉ gửi zip mới khi cài lần đầu hoặc khi sửa `CaiDat.bat`/`manifest.xml`.
+   Sửa panel thì tăng `PANEL_VERSION`, `PANEL_DATE` trong `js/main.js` và Version trong `CSXS/manifest.xml`.
+2. Thêm một dòng vào đầu mục ngày trong `CHANGELOG.md`, đúng dạng (panel đọc dòng này làm ghi chú "Có gì mới"):
+   `- TenFile.jsx v1.1.0: thay đổi gì` hoặc `- Panel Tool Launcher v1.2.0: thay đổi gì`
+3. Chạy `python3 dong_goi.py` (tạo lại `capnhat.json` và `/mnt/project-files/BoToolPhotoshop.zip`), commit, push lên `main`.
+4. Báo người dùng: mở panel là thấy khung "🔔 Có bản mới" kèm ghi chú, bấm "⬇ Cập nhật ngay". Tool vừa cập nhật có nhãn MỚI.
+   Chỉ gửi zip mới khi cài lần đầu hoặc khi sửa `CaiDat.bat`/`manifest.xml`.
+   GitHub raw có thể trễ tới ~5 phút sau khi push.
 
 ## Các tool hiện có
 | File | Nhóm | Làm gì |
