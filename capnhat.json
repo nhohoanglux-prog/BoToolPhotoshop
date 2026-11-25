@@ -31,9 +31,9 @@
     {
       "path": "SoTrangTuDong.jsx",
       "name": "Số trang tự động",
-      "version": "1.4.1",
+      "version": "1.5.0",
       "date": "2026-11-25",
-      "notes": "Tự xoá các số trang cũ bị sót NGOÀI artboard từ những lần chạy trước (chúng hiện đè ở giữa trang trái mà tool không thấy); số mới luôn nằm trên cùng, trực tiếp trong artboard; \"Gỡ hết số\" xoá luôn số sót."
+      "notes": "Bỏ ô \"Đối xứng trang đôi\", thay bằng 2 ô chọn vị trí riêng: \"Trang chẵn\" (mặc định Dưới trái) và \"Trang lẻ\" (mặc định Dưới phải), tính theo số trang hiện trên trang."
     },
     {
       "path": "XoayIsometric.jsx",
@@ -51,6 +51,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "SoTrangTuDong.jsx v1.5.0: bỏ ô \"Đối xứng trang đôi\", thay bằng 2 ô chọn vị trí riêng: \"Trang chẵn\" (mặc định Dưới trái) và \"Trang lẻ\" (mặc định Dưới phải), tính theo số trang hiện trên trang."
+    },
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.4.1: tự xoá các số trang cũ bị sót NGOÀI artboard từ những lần chạy trước (chúng hiện đè ở giữa trang trái mà tool không thấy); số mới luôn nằm trên cùng, trực tiếp trong artboard; \"Gỡ hết số\" xoá luôn số sót."
@@ -86,10 +90,6 @@
     {
       "date": "2026-11-25",
       "text": "CheDoNhe.jsx v1.1.0: nút \"Dừng\" (hoặc Esc) khi đang làm nhẹ / trả ảnh gốc; dừng là file trả về như lúc trước khi chạy, ảnh gốc vẫn nguyên."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "SoTrangTuDong.jsx v1.2.0: sửa lỗi trang bên trái số bị lệch ra giữa, giờ nằm đúng góc trái như sách; bấm \"Cập nhật tất cả\" có khung tiến độ và nút \"Dừng\" (hoặc Esc), dừng là trả file về y như cũ."
     }
   ]
 }

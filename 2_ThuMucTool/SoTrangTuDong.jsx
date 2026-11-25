@@ -2,8 +2,8 @@
 /*
   @name: Số trang tự động
   @group: Artboard
-  @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), đối xứng như sách; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.4.1
+  @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), chọn vị trí riêng cho trang chẵn / lẻ; sửa 1 số rồi bấm Cập nhật tất cả.
+  @version: 1.5.0
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.4.1';
+var TOOL_VERSION = '1.5.0';
 var TAG = '[Số trang]';
 var LOG = [], STEPS = [], DIAG = '';   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
 var c = function (x) { return charIDToTypeID(x); };
@@ -140,9 +140,9 @@ function defaultStyle(arts) {
     var minSide = 3000;
     if (arts.length) minSide = Math.min(arts[0].w, arts[0].h);
     return {
-        styleIdx: 0, tpl: '{so}', pos: 8,
+        styleIdx: 0, tpl: '{so}', posEven: 6, posOdd: 8,
         mx: Math.max(10, Math.round(minSide * 0.04)), my: Math.max(10, Math.round(minSide * 0.03)),
-        mirror: true, font: 'ArialMT', size: Math.max(8, Math.round(minSide * 0.018)), color: '333333',
+        font: 'ArialMT', size: Math.max(8, Math.round(minSide * 0.018)), color: '333333',
         fromPage: 2, start: 2, skipLast: false, skipList: '', pad: true
     };
 }
@@ -249,8 +249,9 @@ function applyAll(st, arts, fxFromId, limit) {
         var isNew = false;
         var txt = pageText(st, arts, i);
         if (lyr && !(lyr.typename == 'ArtLayer' && lyr.kind == LayerKind.TEXT)) { try { lyr.remove(); } catch (e) { } lyr = null; }
-        var v = Math.floor(st.pos / 3), h = st.pos % 3;
-        if (st.mirror && ab.rowLen >= 2 && ab.col % 2 == 0) h = 2 - h;   // trang trái của cặp: lật ngang
+        // v1.5.0 (người dùng đề xuất): vị trí theo số trang chẵn / lẻ, không lật đối xứng nữa
+        var pp = pageNum(st, arts, i) % 2 == 0 ? st.posEven : st.posOdd;
+        var v = Math.floor(pp / 3), h = pp % 3;
         if (!lyr) {
             lyr = makeTextLayer(doc, set, ab, txt, st, h, v, res);
             isNew = true;
@@ -537,7 +538,7 @@ function styleFromActive(st, arts) {
         var l = app.activeDocument.activeLayer;
         if (l.typename != 'ArtLayer' || l.kind != LayerKind.TEXT || l.name.indexOf(TAG) != 0) return null;
         var ti = l.textItem, res = app.activeDocument.resolution;
-        var o = { font: st.font, size: st.size, color: st.color, id: l.id };
+        var o = { font: st.font, size: st.size, color: st.color, id: l.id, even: null };
         try { o.font = ti.font; } catch (e) { }
         try { o.size = Math.round(ti.size.as('pt') * res / 72); } catch (e) { }
         try { o.color = colorToHex(ti.color); } catch (e) { }
@@ -552,8 +553,8 @@ function styleFromActive(st, arts) {
             var h = cx < 1 / 3 ? 0 : cx > 2 / 3 ? 2 : 1, v = cy < 1 / 3 ? 0 : cy > 2 / 3 ? 2 : 1;
             o.mx = Math.round(h == 0 ? L : h == 2 ? R : st.mx);
             o.my = Math.round(v == 0 ? T : v == 2 ? B : st.my);
-            if (st.mirror && ab.rowLen >= 2 && ab.col % 2 == 0) h = 2 - h;   // trang trái: đổi về kiểu trang phải
             o.pos = v * 3 + h;
+            o.even = pageNum(st, arts, i) % 2 == 0;
             break;
         }
         return o;
@@ -621,7 +622,7 @@ var HELP = 'SỐ TRANG TỰ ĐỘNG\n\n' +
     '• Mẫu chữ: {so} = số trang, {tong} = tổng số trang, {ten} = tên artboard. Ví dụ: "Trang {so} / {tong}".\n' +
     '• "Gắn số từ trang thứ 2, mang số 2" = bìa không hiện số nhưng vẫn tính là trang 1. Muốn bìa không tính: để "mang số 1".\n' +
     '• Bỏ: gõ vị trí trang không muốn hiện số, ví dụ "5, 10-12" (vẫn được tính).\n' +
-    '• Đối xứng trang đôi (như sách): trang bên trái của mỗi cặp lật vị trí, Dưới phải thành Dưới trái. Trang đứng 1 mình trong hàng (bìa) giữ nguyên.\n' +
+    '• Trang chẵn / Trang lẻ: chọn riêng vị trí số cho trang số chẵn (02, 04…) và trang số lẻ (03, 05…). Ví dụ chẵn = Dưới trái, lẻ = Dưới phải như sách.\n' +
     '• Layer số tên "[Số trang] …", đừng đổi tên để tool còn nhận ra.';
 
 function showDialog(st, arts, fromActive) {
@@ -648,13 +649,15 @@ function showDialog(st, arts, fromActive) {
     var cbPad = r1.add('checkbox', undefined, '01'); cbPad.value = st.pad; cbPad.helpTip = 'Thêm số 0 phía trước (01 thay vì 1)';
 
     // Hàng 2: vị trí + lề
-    var r2 = row(); r2.add('statictext', undefined, 'Vị trí:');
-    var ddPos = r2.add('dropdownlist', undefined, POS); ddPos.selection = st.pos; ddPos.preferredSize.width = 110;
+    var r2 = row(); r2.add('statictext', undefined, 'Trang chẵn:');
+    var ddEven = r2.add('dropdownlist', undefined, POS); ddEven.selection = st.posEven; ddEven.preferredSize.width = 105;
+    ddEven.helpTip = 'Vị trí số trên trang số chẵn (02, 04…)';
+    r2.add('statictext', undefined, 'Trang lẻ:');
+    var ddOdd = r2.add('dropdownlist', undefined, POS); ddOdd.selection = st.posOdd; ddOdd.preferredSize.width = 105;
+    ddOdd.helpTip = 'Vị trí số trên trang số lẻ (03, 05…)';
     var eMx = num(r2, 'Lề ngang', st.mx, 'Khoảng cách tới mép trái/phải artboard (px)');
     var eMy = num(r2, 'dọc', st.my, 'Khoảng cách tới mép trên/dưới artboard (px)');
     r2.add('statictext', undefined, 'px');
-    var cbMirror = r2.add('checkbox', undefined, 'Đối xứng trang đôi'); cbMirror.value = st.mirror;
-    cbMirror.helpTip = 'Trang bên trái của mỗi cặp: lật vị trí sang bên trái';
 
     // Hàng 3: font, cỡ, màu
     var r3 = row(); r3.add('statictext', undefined, 'Font:');
@@ -702,8 +705,8 @@ function showDialog(st, arts, fromActive) {
     function intOf(e, def, min) { var v = parseInt(e.text, 10); if (isNaN(v)) v = def; if (min != null && v < min) v = min; return v; }
     function collect() {
         return {
-            styleIdx: ddStyle.selection.index, tpl: eTpl.text || '{so}', pos: ddPos.selection.index,
-            mx: intOf(eMx, st.mx, 0), my: intOf(eMy, st.my, 0), mirror: cbMirror.value,
+            styleIdx: ddStyle.selection.index, tpl: eTpl.text || '{so}', posEven: ddEven.selection.index, posOdd: ddOdd.selection.index,
+            mx: intOf(eMx, st.mx, 0), my: intOf(eMy, st.my, 0),
             font: eFont.text.replace(/^\s+|\s+$/g, ''), size: intOf(eSize, st.size, 1), color: cleanHex(eCol.text) || st.color,
             fromPage: Math.min(arts.length, intOf(eFrom, 1, 1)), start: intOf(eStart, 1, 0), skipLast: cbLast.value, skipList: eSkip.text, pad: cbPad.value
         };
@@ -813,7 +816,10 @@ function main() {
         var fromActive = styleFromActive(st, arts);
         if (fromActive) {
             st.font = fromActive.font; st.size = fromActive.size; st.color = fromActive.color;
-            if (fromActive.pos != null) { st.pos = fromActive.pos; st.mx = fromActive.mx; st.my = fromActive.my; }
+            if (fromActive.pos != null) {
+                if (fromActive.even) st.posEven = fromActive.pos; else st.posOdd = fromActive.pos;
+                st.mx = fromActive.mx; st.my = fromActive.my;
+            }
         }
 
         var r = showDialog(st, arts, fromActive);
