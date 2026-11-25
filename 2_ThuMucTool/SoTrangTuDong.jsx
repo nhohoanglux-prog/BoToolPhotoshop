@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), đối xứng như sách; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.3.1
+  @version: 1.4.0
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.3.1';
+var TOOL_VERSION = '1.4.0';
 var TAG = '[Số trang]';
 var LOG = [], STEPS = [], DIAG = '';   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
 var c = function (x) { return charIDToTypeID(x); };
@@ -270,19 +270,32 @@ function applyAll(st, arts, fxFromId, limit) {
         // v1.3.0: canh bằng lệnh Align của Photoshop "theo artboard" (Align To Canvas: layer trong artboard
         // thì canh theo chính artboard đó), rồi dời thêm đúng phần lề. Không cần biết toạ độ artboard nữa
         // (v1.0-1.2.1 tính bằng toạ độ: trang trái luôn ra giữa trên máy người dùng).
+        // v1.4.0: dời có kiểm tra phản hồi. Nhật ký v1.3.1 trên máy người dùng: Align KHÔNG làm gì
+        // (1729 -> 1730) và lệnh dời +99 lại làm chữ đi -99. Nên giờ: dời, đo lại, xem chữ thật sự đi
+        // bao nhiêu / về hướng nào, rồi tự chỉnh hệ số; đứng yên thì đổi cách dời (DOM translate <-> AM move).
         var b0 = measureLayer(lyr), b = b0, moves = [];
-        var aligned = alignInArtboard(lyr, h, v, st.mx, st.my);
-        if (aligned) { b = measureLayer(lyr); moves.push('align'); }
-        for (var tr = 0; !aligned && tr < 4; tr++) {
+        STEPS = [];
+        var gx = 1, gy = 1, method = 0;   // 0 = DOM translate, 1 = AM move
+        for (var tr = 0; tr < 8; tr++) {
             var lw = b.R - b.L, lh = b.B - b.T;
             var tx = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + (ab.w - lw) / 2 : ab.left + ab.w - st.mx - lw;
             var ty = v == 0 ? ab.top + st.my : v == 1 ? ab.top + (ab.h - lh) / 2 : ab.top + ab.h - st.my - lh;
-            var dx = Math.round(tx - b.L), dy = Math.round(ty - b.T);
-            if (Math.abs(dx) < 1 && Math.abs(dy) < 1) break;
-            moveLayerBy(lyr, dx, dy);
-            moves.push(dx + ',' + dy);
-            b = measureLayer(lyr);
+            var ex = tx - b.L, ey = ty - b.T;
+            if (Math.abs(ex) < 1 && Math.abs(ey) < 1) break;
+            var mx = Math.abs(ex) < 1 ? 0 : Math.round(ex / gx), my = Math.abs(ey) < 1 ? 0 : Math.round(ey / gy);
+            if (method == 0) { try { lyr.translate(new UnitValue(mx, 'px'), new UnitValue(my, 'px')); } catch (e) { moveLayerBy(lyr, mx, my); } }
+            else moveLayerBy(lyr, mx, my);
+            var b2 = measureLayer(lyr);
+            var ox = b2.L - b.L, oy = b2.T - b.T;
+            moves.push((method ? 'AM ' : 'DOM ') + mx + ',' + my + ' => ' + Math.round(ox) + ',' + Math.round(oy));
+            if (mx && Math.abs(ox) < 0.5) method = 1 - method;              // không nhúc nhích: đổi cách dời
+            else if (Math.abs(mx) >= 2) { var kx = ox / mx; if (Math.abs(kx) > 0.2 && Math.abs(kx) < 5) gx = kx; }
+            if (my && Math.abs(oy) < 0.5) method = 1 - method;
+            else if (Math.abs(my) >= 2) { var ky = oy / my; if (Math.abs(ky) > 0.2 && Math.abs(ky) < 5) gy = ky; }
+            b = b2;
         }
+        STEPS = moves.slice(0);
+        var aligned = false;
         var lw2 = b.R - b.L;
         var want = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + (ab.w - lw2) / 2 : ab.left + ab.w - st.mx - lw2;
         var off = Math.round(b.L - want);
@@ -291,20 +304,20 @@ function applyAll(st, arts, fxFromId, limit) {
             ' | chữ lúc đầu x ' + Math.round(b0.L) + '..' + Math.round(b0.R) + ' | dời ' + (moves.join(' ; ') || 'không') +
             ' | chữ sau x ' + Math.round(b.L) + '..' + Math.round(b.R) + ' y ' + Math.round(b.T) + '..' + Math.round(b.B) + ' | lệch ' + off);
         LOG.push('    các bước (x trái..phải / y trên..dưới): ' + STEPS.join(' | '));
-        if (!DIAG && h == 0) {
+        if (!DIAG && Math.abs(off) > 3) {
             var abB = layerBoundsById(ab.id), dom = '';
             try { var db = lyr.bounds; dom = Math.round(px(db[0])) + '..' + Math.round(px(db[2])); } catch (e) { }
             DIAG = 'THÔNG TIN KIỂM TRA (chụp màn hình gửi Claude giúp mình):\n' +
-                'Trang thứ ' + (i + 1) + ' "' + ab.name + '" là trang TRÁI (cột ' + ab.col + '/' + ab.rowLen + ')\n' +
+                'Trang thứ ' + (i + 1) + ' "' + ab.name + '" ' + (h == 0 ? 'TRÁI' : h == 1 ? 'GIỮA' : 'PHẢI') + ' (cột ' + ab.col + '/' + ab.rowLen + '), lệch ' + off + ' px\n' +
                 'Khổ file: ' + Math.round(px(doc.width)) + ' x ' + Math.round(px(doc.height)) + ' px\n' +
                 'Artboard (artboardRect): x ' + Math.round(ab.left) + '..' + Math.round(ab.left + ab.w) + ', y ' + Math.round(ab.top) + '..' + Math.round(ab.top + ab.h) + '\n' +
                 'Artboard (bounds layer): ' + abB + '\n' +
-                'Số trang: ' + STEPS.join('\n   ') + '\n' +
+                'Số trang lúc đầu x ' + Math.round(b0.L) + '..' + Math.round(b0.R) + '\nCác lần dời (yêu cầu => thật sự đi):\n   ' + STEPS.join('\n   ') + '\n' +
                 'Số trang (DOM): x ' + dom + '\n' +
-                'Canh bằng Align: ' + (aligned ? 'có' : 'KHÔNG (lỗi)') + '\n' +
+
                 'Nhật ký đầy đủ: ' + logFile().fsName;
         }
-        if (!aligned && Math.abs(off) > 3) stat.warns.push('Trang thứ ' + (i + 1) + ': số còn lệch ' + off + ' px so với chỗ đúng.');
+        if (Math.abs(off) > 3) stat.warns.push('Trang thứ ' + (i + 1) + ': số còn lệch ' + off + ' px so với chỗ đúng.');
         prog('Đang gắn số: trang thứ ' + (i + 1) + '/' + arts.length, Math.round((i + 1) / arts.length * 100));
 
         if (fxOK) { try { doc.activeLayer = lyr; executeAction(c('PaFX'), undefined, DialogModes.NO); } catch (e) { } }
