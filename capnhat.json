@@ -29,9 +29,9 @@
     {
       "path": "SoTrangTuDong.jsx",
       "name": "Số trang tự động",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "date": "2026-11-25",
-      "notes": "\"Xem trước\" giờ chỉ gắn thử số cho vài trang đầu (mặc định 3 trang, thấy được cả trang trái lẫn trang phải) nên rất nhanh; ưng rồi mới bấm \"Cập nhật tất cả\" để áp cho mọi trang, bấm Hủy là bỏ hết số xem thử."
+      "notes": "Sửa lỗi trang bên trái số bị lệch ra giữa, giờ nằm đúng góc trái như sách; bấm \"Cập nhật tất cả\" có khung tiến độ và nút \"Dừng\" (hoặc Esc), dừng là trả file về y như cũ."
     },
     {
       "path": "XoayIsometric.jsx",
@@ -49,6 +49,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "SoTrangTuDong.jsx v1.2.0: sửa lỗi trang bên trái số bị lệch ra giữa, giờ nằm đúng góc trái như sách; bấm \"Cập nhật tất cả\" có khung tiến độ và nút \"Dừng\" (hoặc Esc), dừng là trả file về y như cũ."
+    },
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.1.0: \"Xem trước\" giờ chỉ gắn thử số cho vài trang đầu (mặc định 3 trang, thấy được cả trang trái lẫn trang phải) nên rất nhanh; ưng rồi mới bấm \"Cập nhật tất cả\" để áp cho mọi trang, bấm Hủy là bỏ hết số xem thử."
@@ -84,10 +88,6 @@
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.3.0: không tự xem trước nữa, chọn xong bấm \"Xem trước\" mới hiện (vẫn bật lại được ô \"Tự xem trước mỗi khi đổi\"); thêm nút đổi chỗ ảnh giữa các mặt (Trên ⇄ Trái, Trái ⇄ Phải, Trên ⇄ Phải, Xoay vòng 3 ảnh); mỗi mặt có nút \"Xoay ↻\" 90° và ô \"Lật\"; thẻ Xoay 1 ảnh có thêm ô \"Lật ngang\"."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "Panel Tool Launcher v1.4.0: bản mới hiện ngay sau khi đưa lên, không phải chờ ~5 phút như trước (panel hỏi GitHub mã bản mới nhất rồi tải đúng bản đó)."
     }
   ]
 }

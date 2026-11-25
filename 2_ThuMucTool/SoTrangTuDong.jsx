@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), đối xứng như sách; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.1.0
+  @version: 1.2.0
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.1.0';
+var TOOL_VERSION = '1.2.0';
 var TAG = '[Số trang]';
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
@@ -253,22 +253,26 @@ function applyAll(st, arts, fxFromId, limit) {
 
         var ti = lyr.textItem;
         try { if (ti.kind != TextType.POINTTEXT) ti.kind = TextType.POINTTEXT; } catch (e) { }
+        try { ti.justification = h == 0 ? Justification.LEFT : h == 1 ? Justification.CENTER : Justification.RIGHT; } catch (e) { }
         ti.contents = txt;
         if (font) ti.font = font;
         ti.size = new UnitValue(st.size * 72 / res, 'pt');   // px -> pt theo độ phân giải file
         ti.color = col;
-        try { ti.justification = h == 0 ? Justification.LEFT : h == 1 ? Justification.CENTER : Justification.RIGHT; } catch (e) { }
         if (isNew) ti.position = [new UnitValue(ab.left + ab.w / 2, 'px'), new UnitValue(ab.top + ab.h / 2, 'px')];
         lyr.name = TAG + ' ' + txt;
 
-        // Canh theo khung chữ thật (bounds) trong artboard
-        var b = lyr.boundsNoEffects || lyr.bounds;
-        var L = px(b[0]), T = px(b[1]), R = px(b[2]), B = px(b[3]);
-        var lw = R - L, lh = B - T;
-        var tx = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + (ab.w - lw) / 2 : ab.left + ab.w - st.mx - lw;
-        var ty = v == 0 ? ab.top + st.my : v == 1 ? ab.top + (ab.h - lh) / 2 : ab.top + ab.h - st.my - lh;
-        var dx = Math.round(tx - L), dy = Math.round(ty - T);
-        if (dx || dy) lyr.translate(new UnitValue(dx, 'px'), new UnitValue(dy, 'px'));
+        // Canh theo khung chữ thật trong artboard. v1.1.0 đọc bounds DOM 1 lần nên trang trái bị lệch
+        // ra giữa (bounds cũ sau khi đổi canh lề chữ). Giờ đo lại mới bằng Action Manager, dời rồi kiểm tra, tối đa 3 lần.
+        for (var tr = 0; tr < 3; tr++) {
+            var b = measureLayer(lyr);
+            var lw = b.R - b.L, lh = b.B - b.T;
+            var tx = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + (ab.w - lw) / 2 : ab.left + ab.w - st.mx - lw;
+            var ty = v == 0 ? ab.top + st.my : v == 1 ? ab.top + (ab.h - lh) / 2 : ab.top + ab.h - st.my - lh;
+            var dx = Math.round(tx - b.L), dy = Math.round(ty - b.T);
+            if (Math.abs(dx) < 1 && Math.abs(dy) < 1) break;
+            lyr.translate(new UnitValue(dx, 'px'), new UnitValue(dy, 'px'));
+        }
+        prog('Đang gắn số: trang thứ ' + (i + 1) + '/' + arts.length, Math.round((i + 1) / arts.length * 100));
 
         if (fxOK) { try { doc.activeLayer = lyr; executeAction(c('PaFX'), undefined, DialogModes.NO); } catch (e) { } }
         if (isNew) stat.added++; else stat.updated++;
@@ -311,6 +315,21 @@ function makeTextLayer(doc, set, ab, txt, pt) {
     if (lyr.parent != set) { try { lyr.move(set, ElementPlacement.PLACEATBEGINNING); } catch (e) { } }
     return lyr;
 }
+// Khung chữ (không tính hiệu ứng), đọc mới từ Photoshop
+function measureLayer(lyr) {
+    try {
+        var r = new ActionReference();
+        r.putIdentifier(c('Lyr '), lyr.id);
+        var d = executeActionGet(r);
+        var key = d.hasKey(s('boundsNoEffects')) ? s('boundsNoEffects') : s('bounds');
+        var o = d.getObjectValue(key);
+        var L = o.getUnitDoubleValue(s('left')), T = o.getUnitDoubleValue(s('top'));
+        return { L: L, T: T, R: o.getUnitDoubleValue(s('right')), B: o.getUnitDoubleValue(s('bottom')) };
+    } catch (e) {
+        var b = lyr.boundsNoEffects || lyr.bounds;
+        return { L: px(b[0]), T: px(b[1]), R: px(b[2]), B: px(b[3]) };
+    }
+}
 function removeAll(arts) {
     var doc = app.activeDocument, n = 0;
     for (var i = 0; i < arts.length; i++) {
@@ -329,6 +348,45 @@ function selectById(id) {
     executeAction(c('slct'), d, DialogModes.NO);
 }
 
+// ---------- Thanh tiến trình + nút Dừng (Esc) – khối dùng chung, giống hệt ở các tool ----------
+// prog() ném lỗi PROG_STOP khi bấm Dừng / Esc; tool bắt lỗi đó rồi trả file về như lúc trước khi chạy.
+var PROG = null, PROG_STOP = 'DUNG_THEO_YEU_CAU', PROG_T = 0;
+function progOpen(title) {
+    var w = new Window('palette', title || 'Đang chạy...');
+    w.alignChildren = 'fill'; w.stop = false;
+    w.msg = w.add('statictext', undefined, 'Chuẩn bị...'); w.msg.characters = 55;
+    w.bar = w.add('progressbar', undefined, 0, 100); w.bar.preferredSize.width = 400;
+    var g = w.add('group'); g.alignment = 'right';
+    g.add('statictext', undefined, 'Bấm Dừng hoặc Esc: hủy hết, file trả về như cũ');
+    var b = g.add('button', undefined, 'Dừng');
+    b.onClick = function () { w.stop = true; b.text = 'Đang dừng...'; };
+    w.addEventListener('keydown', function (e) { if (e.keyName == 'Escape') w.stop = true; });
+    w.onClose = function () { w.stop = true; };
+    PROG = w; PROG_T = 0;
+    w.show();
+}
+function prog(msg, pct) {
+    if (!PROG) return;
+    if (msg != null) PROG.msg.text = msg;
+    if (pct != null) PROG.bar.value = pct;
+    PROG.update();
+    var now = new Date().getTime();
+    if (now - PROG_T > 600) { PROG_T = now; try { app.refresh(); } catch (e) { } }
+    if (PROG && PROG.stop) throw new Error(PROG_STOP);
+}
+function progClose() {
+    if (!PROG) return;
+    var w = PROG; PROG = null; w.onClose = null;
+    try { w.close(); } catch (e) { }
+}
+// Bấm Dừng, hoặc Esc của chính Photoshop ("User cancelled the operation", mã 8007)
+function isStopErr(e) {
+    if (!e) return false;
+    var m = String(e.message || e);
+    return m.indexOf(PROG_STOP) >= 0 || e.number == 8007 || /cancel/i.test(m);
+}
+// ---------- hết khối dùng chung ----------
+
 // Chạy trong suspendHistory (1 bước History)
 function runOp(title, mode, st, arts, fxFromId, limit) {
     $.global.__ST = { mode: mode, st: st, arts: arts, fx: fxFromId, limit: limit || 0, out: null, err: '' };
@@ -339,7 +397,7 @@ function runOp(title, mode, st, arts, fxFromId, limit) {
 function __ST_run() {
     var g = $.global.__ST;
     try { g.out = g.mode == 'remove' ? { removed: removeAll(g.arts), warns: [] } : applyAll(g.st, g.arts, g.fx, g.limit); }
-    catch (e) { g.err = e.message + (e.line ? ' (dòng ' + e.line + ')' : ''); }
+    catch (e) { g.err = isStopErr(e) ? PROG_STOP : e.message + (e.line ? ' (dòng ' + e.line + ')' : ''); }
 }
 
 // Lấy kiểu từ layer số trang đang chọn (nếu có)
@@ -590,14 +648,11 @@ function showDialog(st, arts, fromActive) {
         result = { removed: g.out.removed };
         w.close(1);
     };
-    bOK.onClick = function () {
-        var o = preview(false, true);
-        if (!o) return;
-        result = o; w.close(1);
-    };
+    // Cập nhật tất cả: đóng hộp thoại (bỏ số xem thử), rồi main() chạy hết mọi trang kèm khung tiến độ + nút Dừng
+    bOK.onClick = function () { result = collect(); w.close(1); };
     bCancel.onClick = function () { revert(); w.close(2); };
     w.onClose = function () {
-        if (!result) revert();
+        revert();
         try { var fl = w.frameLocation, d = new ActionDescriptor(); d.putInteger(s('x'), fl[0]); d.putInteger(s('y'), fl[1]); app.putCustomOptions('SoTrangTuDong_win', d, true); } catch (e) { }
     };
     w.onShow = function () {
@@ -631,8 +686,18 @@ function main() {
         var r = showDialog(st, arts, fromActive);
         if (!r) return;
         if (r.removed != null) { alert('Đã gỡ ' + r.removed + ' số trang. Bấm Ctrl+Z nếu muốn lấy lại.'); return; }
-        var warns = r.__warns || [];
-        delete r.__warns; delete r.__out;
+        var before = doc.activeHistoryState;
+        progOpen('Số trang tự động: đang cập nhật ' + arts.length + ' trang');
+        var g;
+        try { g = runOp('Số trang tự động', 'apply', r, arts, fromActive ? fromActive.id : 0, 0); }
+        finally { progClose(); }
+        if (g.err) {
+            try { doc.activeHistoryState = before; } catch (e) { }
+            if (isStopErr({ message: g.err })) alert('Đã dừng. File đã trả về như lúc trước khi cập nhật.');
+            else alert('Có lỗi: ' + g.err + '\nFile đã trả về như cũ. Bạn chụp màn hình gửi lại giúp mình nhé.');
+            return;
+        }
+        var warns = g.out.warns || [];
         var str = styleToString(r);
         if (!saveDocStyle(doc, str)) warns.push('Không lưu được kiểu vào file (XMP), lần sau tool dùng kiểu nhớ trong máy.');
         saveLastStyle(str);
