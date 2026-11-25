@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), chọn vị trí riêng cho trang chẵn / lẻ; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.5.1
+  @version: 1.5.2
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.5.1';
+var TOOL_VERSION = '1.5.2';
 var TAG = '[Số trang]';
 var LOG = [], STEPS = [], DIAG = '';   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
 var c = function (x) { return charIDToTypeID(x); };
@@ -337,7 +337,7 @@ function applyAll(st, arts, fxFromId, limit) {
             ' | chữ lúc đầu x ' + Math.round(b0.L) + '..' + Math.round(b0.R) + ' | dời ' + (moves.join(' ; ') || 'không') +
             ' | chữ sau x ' + Math.round(b.L) + '..' + Math.round(b.R) + ' y ' + Math.round(b.T) + '..' + Math.round(b.B) + ' | lệch ' + off);
         LOG.push('    các bước (x trái..phải / y trên..dưới): ' + STEPS.join(' | '));
-        if (!DIAG && Math.abs(off) > 3) {
+        if (!DIAG && (Math.abs(off) > 3 || (limit > 0 && h == 0))) {
             var abB = layerBoundsById(ab.id), dom = '';
             try { var db = lyr.bounds; dom = Math.round(px(db[0])) + '..' + Math.round(px(db[2])); } catch (e) { }
             DIAG = 'THÔNG TIN KIỂM TRA (chụp màn hình gửi Claude giúp mình):\n' +
@@ -347,7 +347,9 @@ function applyAll(st, arts, fxFromId, limit) {
                 'Artboard (bounds layer): ' + abB + '\n' +
                 'Số trang lúc đầu x ' + Math.round(b0.L) + '..' + Math.round(b0.R) + '\nCác lần dời (yêu cầu => thật sự đi):\n   ' + STEPS.join('\n   ') + '\n' +
                 'Số trang (DOM): x ' + dom + '\n' +
-
+                'Số trang (điểm ảnh thật): ' + fmtB(pixelBounds(lyr.id)) + '\n' +
+                'Layer tool dời: id ' + lyr.id + ', nằm trong "' + lyr.parent.name + '" (id ' + lyr.parent.id + '), artboard id ' + ab.id + '\n' +
+                'Mọi layer chữ "' + txt + '" trong file:\n' + listTwins(doc, txt) +
                 'Nhật ký đầy đủ: ' + logFile().fsName;
         }
         if (Math.abs(off) > 3) stat.warns.push('Trang thứ ' + (i + 1) + ': số còn lệch ' + off + ' px so với chỗ đúng.');
@@ -434,6 +436,40 @@ function alignInArtboard(lyr, h, v, mx, my) {
         STEPS.push('dời lề ' + fm(measureLayer(lyr)));
         return true;
     } catch (e) { return false; }
+}
+function fmtB(b) { return b ? 'x ' + Math.round(b.L) + '..' + Math.round(b.R) + ', y ' + Math.round(b.T) + '..' + Math.round(b.B) : 'không đọc được'; }
+// Vùng điểm ảnh thật của layer (chọn theo độ trong suốt của layer rồi đọc khung vùng chọn)
+function pixelBounds(id) {
+    try {
+        var d = new ActionDescriptor(), r = new ActionReference();
+        r.putProperty(c('Chnl'), c('fsel'));
+        d.putReference(c('null'), r);
+        var r2 = new ActionReference();
+        r2.putEnumerated(c('Chnl'), c('Chnl'), c('Trsp'));
+        r2.putIdentifier(c('Lyr '), id);
+        d.putReference(c('T   '), r2);
+        executeAction(c('setd'), d, DialogModes.NO);
+        var b = app.activeDocument.selection.bounds;
+        app.activeDocument.selection.deselect();
+        return { L: px(b[0]), T: px(b[1]), R: px(b[2]), B: px(b[3]) };
+    } catch (e) { return null; }
+}
+function listTwins(doc, txt) {
+    var out = [];
+    function walk(cont, path) {
+        for (var i = 0; i < cont.layers.length && out.length < 6; i++) {
+            var l = cont.layers[i];
+            if (l.typename == 'LayerSet') { walk(l, path + l.name + ' > '); continue; }
+            try {
+                if (l.kind != LayerKind.TEXT) continue;
+                if (String(l.textItem.contents).replace(/^\s+|\s+$/g, '') != txt) continue;
+                var b = measureLayer(l);
+                out.push('   - "' + l.name + '" id ' + l.id + (l.visible ? '' : ' (ẨN)') + ' | ' + path + ' | ' + fmtB(b) + ' | điểm ảnh ' + fmtB(pixelBounds(l.id)));
+            } catch (e) { }
+        }
+    }
+    try { walk(doc, ''); } catch (e) { }
+    return (out.join('\n') || '   (không có)') + '\n';
 }
 function layerBoundsById(id) {
     try {
