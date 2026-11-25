@@ -3,7 +3,7 @@
   @name: Xuất artboard nén theo dung lượng
   @group: Xuất file
   @desc: Xuất tất cả artboard theo thứ tự trang ra PDF, JPG hoặc PNG, tự nén cho tổng dung lượng vừa giới hạn MB.
-  @version: 1.0.0
+  @version: 1.1.0
   @date: 2026-11-25
 
   XuatArtboardNen.jsx
@@ -121,7 +121,7 @@ function showDialog(total, docName, docFolder) {
     var g2 = p2.add('group'); g2.add('statictext', undefined, 'Tổng dung lượng tối đa (MB, 0 = không giới hạn):');
     var maxMB = g2.add('edittext', undefined, '20'); maxMB.characters = 6;
     var g3 = p2.add('group'); g3.add('statictext', undefined, 'Độ phân giải cao nhất (DPI):');
-    var dpi = g3.add('edittext', undefined, '150'); dpi.characters = 6;
+    var dpi = g3.add('edittext', undefined, '300'); dpi.characters = 6;
     var g4 = p2.add('group'); var qLbl = g4.add('statictext', undefined, 'Chất lượng JPEG bắt đầu (1-12):');
     var q = g4.add('edittext', undefined, '10'); q.characters = 4;
     var g5 = p2.add('group'); g5.add('statictext', undefined, 'Không hạ dưới (DPI):');
@@ -158,12 +158,20 @@ function showDialog(total, docName, docFolder) {
     };
     refresh();
 
-    var b = w.add('group'); b.alignment = 'right';
+    var b = w.add('group'); b.alignment = 'fill';
+    var bestQ = false;
+    var best = b.add('button', undefined, 'Chất lượng cao nhất');
+    best.helpTip = 'Xuất ngay ở 300 DPI, chất lượng JPEG 12. Bỏ qua ô DPI và chất lượng.\n' +
+                   'Nếu có nhập giới hạn MB thì vẫn tự nén khi vượt giới hạn.';
+    best.onClick = function () { bestQ = true; w.close(1); };
+    var sp = b.add('group'); sp.alignment = ['fill', 'center'];
     b.add('button', undefined, 'Hủy', { name: 'cancel' });
     b.add('button', undefined, 'Xuất', { name: 'ok' });
 
     if (w.show() !== 1) return null;
+    if (bestQ) { dpi.text = '300'; q.text = '12'; }
     return {
+        best: bestQ,
         fmt: fmt.selection.index,           // 0 PDF, 1 JPG, 2 PNG
         byName: order.selection.index === 1,
         layout: layout.selection.index,
@@ -479,6 +487,7 @@ function renderAll(M, O, order, pages, tmp, curDpi, curQ, tries) {
     if (err) { alert('Có lỗi khi xuất:\n' + err + (err.line ? '\n(dòng ' + err.line + ')' : '')); return; }
     var where = O.fmt === 0 ? O.pdfFile.fsName : O.imgFolder.fsName;
     var msg = (result.ok ? 'Xong!' : 'Đã hạ tới mức thấp nhất cho phép mà vẫn chưa vừa giới hạn.') +
+        (O.best ? '\nChế độ: Chất lượng cao nhất (300 DPI, chất lượng 12)' : '') +
         '\nĐịnh dạng: ' + FMT_NAMES[O.fmt] +
         '\nLưu tại: ' + where +
         '\n' + (O.fmt === 0 ? 'Số trang PDF: ' : 'Số ảnh: ') + result.count +
