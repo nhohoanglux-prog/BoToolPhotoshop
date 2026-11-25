@@ -3,7 +3,7 @@
   @name: Số trang tự động
   @group: Artboard
   @desc: Gắn số trang cho mọi artboard kiểu Canva (01, Trang 01, 01 / 43), đối xứng như sách; sửa 1 số rồi bấm Cập nhật tất cả.
-  @version: 1.2.1
+  @version: 1.3.0
   @date: 2026-11-25
 
   SoTrangTuDong.jsx – Số trang tự động cho các artboard
@@ -18,7 +18,7 @@
   - Mọi thay đổi gom 1 bước History.
 */
 
-var TOOL_VERSION = '1.2.1';
+var TOOL_VERSION = '1.3.0';
 var TAG = '[Số trang]';
 var LOG = [];   // nhật ký vị trí từng trang, ghi ra file để gửi lại khi số bị lệch
 var c = function (x) { return charIDToTypeID(x); };
@@ -223,6 +223,7 @@ function applyAll(st, arts, fxFromId, limit) {
     LOG = ['Số trang tự động v' + TOOL_VERSION + ' | ' + new Date() + ' | file ' + doc.name + ' ' + px(doc.width) + 'x' + px(doc.height) + ' px, ' + res + ' ppi'];
     if (!font) stat.warns.push('Không tìm thấy font "' + st.font + '", giữ font hiện có.');
 
+    try { doc.selection.deselect(); } catch (e) { }   // có vùng chọn thì lệnh Align sẽ canh theo vùng chọn
     var fxOK = false;
     if (fxFromId) { try { selectById(fxFromId); executeAction(c('CpFX'), undefined, DialogModes.NO); fxOK = true; } catch (e) { fxOK = false; } }
 
@@ -265,9 +266,13 @@ function applyAll(st, arts, fxFromId, limit) {
 
         // Canh theo khung chữ thật trong artboard. v1.1.0 đọc bounds DOM 1 lần nên trang trái bị lệch
         // ra giữa (bounds cũ sau khi đổi canh lề chữ). Giờ đo lại mới bằng Action Manager, dời rồi kiểm tra, tối đa 3 lần.
-        // v1.2.1: dời bằng Action Manager (không dùng DOM translate) và kiểm tra lại sau khi dời.
+        // v1.3.0: canh bằng lệnh Align của Photoshop "theo artboard" (Align To Canvas: layer trong artboard
+        // thì canh theo chính artboard đó), rồi dời thêm đúng phần lề. Không cần biết toạ độ artboard nữa
+        // (v1.0-1.2.1 tính bằng toạ độ: trang trái luôn ra giữa trên máy người dùng).
         var b0 = measureLayer(lyr), b = b0, moves = [];
-        for (var tr = 0; tr < 4; tr++) {
+        var aligned = alignInArtboard(lyr, h, v, st.mx, st.my);
+        if (aligned) { b = measureLayer(lyr); moves.push('align'); }
+        for (var tr = 0; !aligned && tr < 4; tr++) {
             var lw = b.R - b.L, lh = b.B - b.T;
             var tx = h == 0 ? ab.left + st.mx : h == 1 ? ab.left + (ab.w - lw) / 2 : ab.left + ab.w - st.mx - lw;
             var ty = v == 0 ? ab.top + st.my : v == 1 ? ab.top + (ab.h - lh) / 2 : ab.top + ab.h - st.my - lh;
@@ -284,7 +289,7 @@ function applyAll(st, arts, fxFromId, limit) {
             ' | artboard x ' + Math.round(ab.left) + '..' + Math.round(ab.left + ab.w) + ' y ' + Math.round(ab.top) + '..' + Math.round(ab.top + ab.h) +
             ' | chữ lúc đầu x ' + Math.round(b0.L) + '..' + Math.round(b0.R) + ' | dời ' + (moves.join(' ; ') || 'không') +
             ' | chữ sau x ' + Math.round(b.L) + '..' + Math.round(b.R) + ' y ' + Math.round(b.T) + '..' + Math.round(b.B) + ' | lệch ' + off);
-        if (Math.abs(off) > 3) stat.warns.push('Trang thứ ' + (i + 1) + ': số còn lệch ' + off + ' px so với chỗ đúng.');
+        if (!aligned && Math.abs(off) > 3) stat.warns.push('Trang thứ ' + (i + 1) + ': số còn lệch ' + off + ' px so với chỗ đúng.');
         prog('Đang gắn số: trang thứ ' + (i + 1) + '/' + arts.length, Math.round((i + 1) / arts.length * 100));
 
         if (fxOK) { try { doc.activeLayer = lyr; executeAction(c('PaFX'), undefined, DialogModes.NO); } catch (e) { } }
@@ -344,6 +349,25 @@ function makeTextLayer(doc, set, ab, txt, st, h, v, res) {
     }
     if (lyr.parent != set) { try { lyr.move(set, ElementPlacement.PLACEATBEGINNING); } catch (e) { } }
     return lyr;
+}
+// Canh layer theo artboard chứa nó (Align To Canvas), rồi dời vào trong theo lề
+function alignInArtboard(lyr, h, v, mx, my) {
+    try {
+        selectById(lyr.id);
+        function al(kind) {
+            var d = new ActionDescriptor(), r = new ActionReference();
+            r.putEnumerated(c('Lyr '), c('Ordn'), c('Trgt'));
+            d.putReference(c('null'), r);
+            d.putEnumerated(c('Usng'), c('ADSt'), s(kind));
+            d.putBoolean(s('alignToCanvas'), true);
+            executeAction(c('Algn'), d, DialogModes.NO);
+        }
+        al(h == 0 ? 'ADSLefts' : h == 1 ? 'ADSCentersH' : 'ADSRights');
+        al(v == 0 ? 'ADSTops' : v == 1 ? 'ADSCentersV' : 'ADSBottoms');
+        var dx = h == 0 ? mx : h == 2 ? -mx : 0, dy = v == 0 ? my : v == 2 ? -my : 0;
+        if (dx || dy) moveLayerBy(lyr, dx, dy);
+        return true;
+    } catch (e) { return false; }
 }
 // Dời layer bằng Action Manager (như kéo bằng Move tool)
 function moveLayerBy(lyr, dx, dy) {

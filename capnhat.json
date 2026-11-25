@@ -29,9 +29,9 @@
     {
       "path": "SoTrangTuDong.jsx",
       "name": "Số trang tự động",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "date": "2026-11-25",
-      "notes": "Sửa tiếp lỗi số ở trang trái nằm giữa: số được tạo sẵn ở đúng góc và canh lề ngay từ đầu, dời bằng cách khác rồi tự kiểm tra lại; nếu còn lệch tool báo và ghi nhật ký SoTrang_nhatky.txt ra Desktop để gửi lại."
+      "notes": "Đổi hẳn cách đặt số: dùng lệnh Align của Photoshop canh theo chính artboard (như bấm canh trái/phải, canh dưới) rồi dời vào đúng lề, nên số ở trang trái phải nằm góc trái."
     },
     {
       "path": "XoayIsometric.jsx",
@@ -49,6 +49,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-25",
+      "text": "SoTrangTuDong.jsx v1.3.0: đổi hẳn cách đặt số: dùng lệnh Align của Photoshop canh theo chính artboard (như bấm canh trái/phải, canh dưới) rồi dời vào đúng lề, nên số ở trang trái phải nằm góc trái."
+    },
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.2.1: sửa tiếp lỗi số ở trang trái nằm giữa: số được tạo sẵn ở đúng góc và canh lề ngay từ đầu, dời bằng cách khác rồi tự kiểm tra lại; nếu còn lệch tool báo và ghi nhật ký SoTrang_nhatky.txt ra Desktop để gửi lại."
@@ -84,10 +88,6 @@
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.6.0: hộp thoại gọn hơn nhiều (bỏ khung minh hoạ to, gom chữ hướng dẫn vào nút \"?\", các nút xếp sát nhau); lần đầu mở nằm sát bên phải màn hình, thanh tiêu đề luôn nằm trong màn hình để kéo được; nhớ vị trí bạn kéo tới cho lần sau."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "CheDoNhe.jsx v1.0.0: tool mới \"Chế độ nhẹ\" giúp bớt lag: tạm thay ảnh Smart Object bằng bản nhẹ theo % bạn chọn (thanh trượt), kích thước và vị trí giữ nguyên, ảnh gốc được cất ở thư mục cạnh file; xem RAM Photoshop đang dùng và RAM dự kiến sau khi làm nhẹ; giữ nét artboard đang chọn, nút \"Làm nét artboard đang chọn\" để đổi sang trang khác; \"Trả về đầy đủ tất cả\" để lấy lại ảnh gốc."
     }
   ]
 }

@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-25
+- SoTrangTuDong.jsx v1.3.0: đổi hẳn cách đặt số: dùng lệnh Align của Photoshop canh theo chính artboard (như bấm canh trái/phải, canh dưới) rồi dời vào đúng lề, nên số ở trang trái phải nằm góc trái.
 - SoTrangTuDong.jsx v1.2.1: sửa tiếp lỗi số ở trang trái nằm giữa: số được tạo sẵn ở đúng góc và canh lề ngay từ đầu, dời bằng cách khác rồi tự kiểm tra lại; nếu còn lệch tool báo và ghi nhật ký SoTrang_nhatky.txt ra Desktop để gửi lại.
 - DanhSoArtboard.jsx v1.1.0: có khung tiến độ và nút "Dừng" (hoặc Esc) khi đang đánh số; dừng là trả file về y như cũ.
 - XuatArtboardNen.jsx v1.6.0: nút "Dừng" (hoặc Esc) trong khung tiến độ khi đang xuất; dừng là hủy ngay, không để lại file xuất dở, file PSD vẫn nguyên.
