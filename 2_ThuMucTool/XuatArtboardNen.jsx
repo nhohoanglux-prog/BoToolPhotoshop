@@ -3,7 +3,7 @@
   @name: Xuất artboard nén theo dung lượng
   @group: Xuất file
   @desc: Xuất tất cả artboard theo thứ tự trang ra PDF, JPG hoặc PNG, tự nén cho tổng dung lượng vừa giới hạn MB.
-  @version: 1.1.0
+  @version: 1.2.0
   @date: 2026-11-25
 
   XuatArtboardNen.jsx
@@ -161,15 +161,15 @@ function showDialog(total, docName, docFolder) {
     var b = w.add('group'); b.alignment = 'fill';
     var bestQ = false;
     var best = b.add('button', undefined, 'Chất lượng cao nhất');
-    best.helpTip = 'Xuất ngay ở 300 DPI, chất lượng JPEG 12. Bỏ qua ô DPI và chất lượng.\n' +
-                   'Nếu có nhập giới hạn MB thì vẫn tự nén khi vượt giới hạn.';
+    best.helpTip = 'Xuất ngay ở 300 DPI, chất lượng JPEG 12, không giới hạn dung lượng.\n' +
+                   'Bỏ qua ô MB, DPI và chất lượng; chỉ xuất 1 lần, không nén lại.';
     best.onClick = function () { bestQ = true; w.close(1); };
     var sp = b.add('group'); sp.alignment = ['fill', 'center'];
     b.add('button', undefined, 'Hủy', { name: 'cancel' });
     b.add('button', undefined, 'Xuất', { name: 'ok' });
 
     if (w.show() !== 1) return null;
-    if (bestQ) { dpi.text = '300'; q.text = '12'; }
+    if (bestQ) { dpi.text = '300'; q.text = '12'; maxMB.text = '0'; }
     return {
         best: bestQ,
         fmt: fmt.selection.index,           // 0 PDF, 1 JPG, 2 PNG
@@ -362,7 +362,7 @@ function renderSpread(M, a, b, file, fmt, q, curDpi) {
 function renderAll(M, O, order, pages, tmp, curDpi, curQ, tries) {
     var files = [], total = 0, i, f;
     var old = tmp.getFiles(); for (i = 0; i < old.length; i++) try { old[i].remove(); } catch (e) {}
-    var label = 'Lần thử ' + tries + ' (' + Math.round(curDpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng ' + curQ) + '): ';
+    var label = 'Lần xuất ' + tries + ' (' + Math.round(curDpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng ' + curQ) + '): ';
 
     if (O.fmt === 0) {
         // PDF: mỗi artboard 1 ảnh JPEG, trang đôi được ghép ngay trong PDF
@@ -389,6 +389,76 @@ function renderAll(M, O, order, pages, tmp, curDpi, curQ, tries) {
         files.push(f);
     }
     return { total: total, files: files };
+}
+
+// ---------- Ước tính nhanh bằng vài trang mẫu ----------
+// "Đơn vị" = thứ được lưu thành 1 ảnh: với PDF là từng artboard, với JPG/PNG là từng trang (đơn hoặc đôi).
+function unitCount(O, order, pages) { return O.fmt === 0 ? order.length : pages.length; }
+function unitPixels(O, order, pages, u) {
+    if (O.fmt === 0) return order[u].w * order[u].h;
+    var it = pages[u].items, px = 0;
+    for (var i = 0; i < it.length; i++) px += order[it[i].img].w * order[it[i].img].h;
+    return px;
+}
+function renderUnit(M, O, order, pages, u, file, dpi, q) {
+    if (O.fmt === 0) return renderSingle(M, order[u], file, 1, q, dpi);
+    var it = pages[u].items;
+    if (it.length === 1) return renderSingle(M, order[it[0].img], file, O.fmt, q, dpi);
+    return renderSpread(M, order[it[0].img], order[it[1].img], file, O.fmt, q, dpi);
+}
+
+// Xuất thử vài trang mẫu rồi suy ra tổng dung lượng cho cả bộ
+function estimate(M, O, order, pages, tmp, sample, dpi, q) {
+    var bytes = 0, px = 0, allPx = 0, n = unitCount(O, order, pages), u;
+    for (u = 0; u < n; u++) allPx += unitPixels(O, order, pages, u);
+    for (var i = 0; i < sample.length; i++) {
+        u = sample[i];
+        prog('Đang ước tính dung lượng: trang mẫu ' + (i + 1) + '/' + sample.length +
+             ' (' + Math.round(dpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng ' + q) + ')', 5 + i * 3);
+        var f = new File(tmp.fsName + '/mau_' + i + (O.fmt === 2 ? '.png' : '.jpg'));
+        renderUnit(M, O, order, pages, u, f, dpi, q);
+        f = new File(f.fsName);
+        bytes += f.length; px += unitPixels(O, order, pages, u);
+        try { f.remove(); } catch (e) {}
+    }
+    return bytes * allPx / px;
+}
+
+// Chọn sẵn DPI và chất lượng để lần xuất đầu tiên vừa giới hạn luôn
+function planSettings(M, O, order, pages, tmp, dpi, q, log) {
+    var n = unitCount(O, order, pages);
+    if (n <= 3) return { dpi: dpi, q: q };              // ít trang thì xuất thẳng cho nhanh
+    var sample = [], k = Math.min(5, Math.max(3, Math.round(n / 8)));
+    for (var i = 0; i < k; i++) {
+        var u = Math.round(i * (n - 1) / (k - 1));
+        if (!sample.length || sample[sample.length - 1] !== u) sample.push(u);
+    }
+    var target = O.maxBytes * 0.92;                     // chừa 8% cho chắc
+    function note(d, qq, e) {
+        log.push('Ước tính (' + sample.length + ' trang mẫu): ' + Math.round(d) + ' DPI' +
+                 (O.fmt === 2 ? '' : ', chất lượng ' + qq) + ' → khoảng ' + (e / 1000000).toFixed(1) + ' MB');
+    }
+    var e1 = estimate(M, O, order, pages, tmp, sample, dpi, q); note(dpi, q, e1);
+    if (e1 <= target) return { dpi: dpi, q: q };
+
+    if (O.fmt === 2) return { dpi: Math.max(O.minDpi, Math.floor(dpi * Math.sqrt(target / e1))), q: q };
+
+    if (q > 8) {
+        var e8 = estimate(M, O, order, pages, tmp, sample, dpi, 8); note(dpi, 8, e8);
+        if (e8 <= target) {
+            // Giữ chất lượng cao nhất có thể ở DPI cao nhất (nội suy giữa 2 lần đo)
+            for (var qq = q - 1; qq > 8; qq--) {
+                if (e8 * Math.pow(e1 / e8, (qq - 8) / (q - 8)) <= target) return { dpi: dpi, q: qq };
+            }
+            return { dpi: dpi, q: 8 };
+        }
+        e1 = e8; q = 8;
+    }
+    var d2 = Math.floor(dpi * Math.sqrt(target / e1));
+    if (d2 >= O.minDpi) return { dpi: d2, q: q };
+    // Hạ tới DPI thấp nhất vẫn chưa đủ: hạ thêm chất lượng
+    var eMin = e1 * Math.pow(O.minDpi / dpi, 2);
+    return { dpi: O.minDpi, q: eMin > target * 1.6 ? 4 : 6 };
 }
 
 // ---------- Chạy ----------
@@ -440,17 +510,20 @@ function renderAll(M, O, order, pages, tmp, curDpi, curQ, tries) {
         M.W = master.width.as('px'); M.H = master.height.as('px');
 
         var curDpi = Math.min(O.dpi, M.res), curQ = O.q, tries = 0, ok = false, R = null, log = [];
-        while (tries < 10) {
+        if (O.maxBytes) {
+            var P = planSettings(M, O, order, pages, tmp, curDpi, curQ, log);
+            curDpi = P.dpi; curQ = P.q;
+        }
+        // Tối đa 3 lần xuất đầy đủ (thường chỉ 1 lần nhờ bước ước tính ở trên)
+        while (tries < 3) {
             tries++;
             R = renderAll(M, O, order, pages, tmp, curDpi, curQ, tries);
-            log.push('Lần ' + tries + ': ' + Math.round(curDpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng ' + curQ) +
+            log.push('Lần xuất ' + tries + ': ' + Math.round(curDpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng ' + curQ) +
                      ' → ' + (R.total / 1000000).toFixed(2) + ' MB');
             if (!O.maxBytes || R.total <= O.maxBytes) { ok = true; break; }
             var ratio = O.maxBytes / R.total;
-            if (O.fmt !== 2 && curQ > 8 && ratio > 0.6) {
-                curQ = Math.max(8, curQ - 2);
-            } else if (curDpi > O.minDpi) {
-                curDpi = Math.max(O.minDpi, Math.floor(curDpi * Math.sqrt(ratio) * 0.95));
+            if (curDpi > O.minDpi) {
+                curDpi = Math.max(O.minDpi, Math.floor(curDpi * Math.sqrt(ratio) * 0.93));
             } else if (O.fmt !== 2 && curQ > 4) {
                 curQ = Math.max(4, curQ - 2);
             } else break;
@@ -487,7 +560,7 @@ function renderAll(M, O, order, pages, tmp, curDpi, curQ, tries) {
     if (err) { alert('Có lỗi khi xuất:\n' + err + (err.line ? '\n(dòng ' + err.line + ')' : '')); return; }
     var where = O.fmt === 0 ? O.pdfFile.fsName : O.imgFolder.fsName;
     var msg = (result.ok ? 'Xong!' : 'Đã hạ tới mức thấp nhất cho phép mà vẫn chưa vừa giới hạn.') +
-        (O.best ? '\nChế độ: Chất lượng cao nhất (300 DPI, chất lượng 12)' : '') +
+        (O.best ? '\nChế độ: Chất lượng cao nhất (300 DPI, chất lượng 12, không giới hạn dung lượng)' : '') +
         '\nĐịnh dạng: ' + FMT_NAMES[O.fmt] +
         '\nLưu tại: ' + where +
         '\n' + (O.fmt === 0 ? 'Số trang PDF: ' : 'Số ảnh: ') + result.count +

@@ -54,4 +54,4 @@ Kho này là bản gốc duy nhất (bản trong /mnt/project-files chỉ là b�
 | File | Nhóm | Làm gì |
 |---|---|---|
 | DanhSoArtboard.jsx | Artboard | Đánh số lại artboard theo vị trí (trên xuống, trái sang) thành "Trang 01…", sắp lại bảng Layers, gom 1 bước History. |
-| XuatArtboardNen.jsx | Xuất file | Xuất artboard theo thứ tự trang ra PDF (gộp) / JPG / PNG, trang đơn hoặc đôi, tự nén để TỔNG dung lượng ≤ giới hạn MB (PNG chỉ hạ DPI). Không đụng file gốc. Mặc định 20 MB, 300 DPI. Nút "Chất lượng cao nhất" = 300 DPI + JPEG 12 một bấm (vẫn giữ giới hạn MB nếu ô MB khác 0). |
+| XuatArtboardNen.jsx | Xuất file | Xuất artboard theo thứ tự trang ra PDF (gộp) / JPG / PNG, trang đơn hoặc đôi, tự nén để TỔNG dung lượng ≤ giới hạn MB (PNG chỉ hạ DPI). Không đụng file gốc. Mặc định 20 MB, 300 DPI. Nút "Chất lượng cao nhất" = 300 DPI + JPEG 12, bỏ qua giới hạn MB, xuất 1 lần. Có giới hạn MB: ước tính bằng 3-5 trang mẫu rồi chọn sẵn DPI/chất lượng, tối đa 3 lần xuất đầy đủ (người dùng phàn nàn chậm khi thử nhiều lần). |
