@@ -2,8 +2,8 @@
 /*
   @name: Đường gióng artboard
   @group: Artboard
-  @desc: Bấm biểu tượng là kẻ đường gióng: đường giữa, chia 3 ngang, chia 3 dọc, lưới 3x3 cho artboard đang chọn hoặc tất cả.
-  @version: 1.0.0
+  @desc: Bấm biểu tượng là kẻ đường gióng: đường giữa, chia 3 ngang, chia 3 dọc, lưới 3x3; nút xoá hết đường gióng (giữ Shift khi bấm = xoá nhanh cả file).
+  @version: 1.1.0
   @date: 2026-11-26
   @icon: grid-3x3
 
@@ -11,12 +11,14 @@
   - Các nút biểu tượng bật / tắt được, rê chuột vào mới hiện chữ (giống thanh công cụ):
       Đường giữa (chia đôi), Chia 3 ngang, Chia 3 dọc; nút nhanh Lưới 3x3, Tất cả, Xoá.
   - Bấm là kẻ ngay để xem; Xong = giữ, Hủy / Esc = trả file như lúc mở.
+  - Nút "Xoá hết đường gióng": xoá MỌI đường gióng (kể cả đường tự kéo tay) của artboard đích.
+  - Giữ Shift khi bấm tool: xoá hết đường gióng trong cả file ngay, không mở hộp thoại (Ctrl+Z để lấy lại).
   - Dùng lệnh "New Guide Layout" của Photoshop (đường gióng riêng của từng artboard).
     Lỗi thì dự phòng: kẻ đường gióng thường của cả file bằng toạ độ artboard.
   Dùng cho Photoshop 2021/2022 trở lên.
 */
 
-var TOOL_VERSION = '1.0.0';
+var TOOL_VERSION = '1.1.0';
 var c = function (x) { return charIDToTypeID(x); };
 var s = function (x) { return stringIDToTypeID(x); };
 
@@ -120,28 +122,36 @@ function guideLayout(cols, rows, replace, allArt) {
     d.putEnumerated(s('guideTarget'), s('guideTarget'), s(allArt ? 'guideTargetAllArtboards' : 'guideTargetSelectedArtboards'));
     executeAction(s('newGuideLayout'), d, DialogModes.NO);
 }
-function clearGuidesAM(allArt) {
-    var ids = allArt ? ['clearAllGuides'] : ['clearSelectedArtboardGuides', 'clearAllGuides'];
+// Xoá MỌI đường gióng của đích: đường gióng riêng của artboard + đường gióng thường (kéo tay) nằm trong artboard.
+// allArt = true: xoá sạch cả file.
+function clearGuidesFull(allArt, arts) {
+    var ids = allArt ? ['clearAllGuides', 'clearCanvasGuides'] : ['clearSelectedArtboardGuides'];
     for (var i = 0; i < ids.length; i++) {
-        try { executeAction(s(ids[i]), undefined, DialogModes.NO); return true; } catch (e) { }
+        try { executeAction(s(ids[i]), undefined, DialogModes.NO); } catch (e) { }
     }
-    return false;
-}
-// Dự phòng: đường gióng thường của cả file, tính bằng toạ độ artboard
-function domGuides(arts, list, clear) {
+    // Quét thêm bằng DOM cho chắc (đường gióng thường còn sót)
     var doc = app.activeDocument, ru = app.preferences.rulerUnits;
-    app.preferences.rulerUnits = Units.PIXELS;
     try {
-        if (clear) {
-            for (var g = doc.guides.length - 1; g >= 0; g--) {
-                var gd = doc.guides[g], p = gd.coordinate.as('px'), hit = false;
+        app.preferences.rulerUnits = Units.PIXELS;
+        for (var g = doc.guides.length - 1; g >= 0; g--) {
+            var gd = doc.guides[g], hit = allArt;
+            if (!hit) {
+                var p = gd.coordinate.as('px');
                 for (var a = 0; a < arts.length && !hit; a++) {
                     var A = arts[a];
                     hit = gd.direction == Direction.VERTICAL ? (p >= A.left - 1 && p <= A.left + A.w + 1) : (p >= A.top - 1 && p <= A.top + A.h + 1);
                 }
-                if (hit) gd.remove();
             }
+            if (hit) { try { gd.remove(); } catch (e2) { } }
         }
+    } catch (e3) { }
+    try { app.preferences.rulerUnits = ru; } catch (e4) { }
+}
+// Dự phòng: đường gióng thường của cả file, tính bằng toạ độ artboard
+function domGuides(arts, list) {
+    var doc = app.activeDocument, ru = app.preferences.rulerUnits;
+    app.preferences.rulerUnits = Units.PIXELS;
+    try {
         for (var i = 0; i < arts.length; i++) {
             var B = arts[i];
             for (var k = 0; k < list.length; k++) {
@@ -163,15 +173,12 @@ function doApplyInner() {
     if (JOB.giua) list.push({ cols: 2, rows: 2 });
     if (JOB.ngang3 || JOB.doc3) list.push({ cols: JOB.doc3 ? 3 : 0, rows: JOB.ngang3 ? 3 : 0 });
     if (!JOB.all) selectIds(JOB.targets);
-    var ok = false;
+    if (JOB.clear) clearGuidesFull(JOB.all, JOB.arts);
+    var ok = true;
     try {
-        if (!list.length) { if (JOB.clear) ok = clearGuidesAM(JOB.all); else ok = true; }
-        else {
-            for (var i = 0; i < list.length; i++) guideLayout(list[i].cols, list[i].rows, JOB.clear && i == 0, JOB.all);
-            ok = true;
-        }
+        for (var i = 0; i < list.length; i++) guideLayout(list[i].cols, list[i].rows, false, JOB.all);
     } catch (e) { ok = false; }
-    if (!ok) { USED_FALLBACK = true; domGuides(JOB.arts, list, JOB.clear); }
+    if (!ok) { USED_FALLBACK = true; domGuides(JOB.arts, list); }
     try { if (JOB.sel.length) selectIds(JOB.sel); } catch (e2) { }
 }
 
@@ -216,7 +223,8 @@ var HELP = 'ĐƯỜNG GIÓNG ARTBOARD\n\n' +
     '   - Chia 3 ngang: 2 đường nằm ngang chia artboard thành 3 hàng.\n' +
     '   - Chia 3 dọc: 2 đường đứng chia thành 3 cột.\n' +
     '   - Lưới 3x3 = bật Chia 3 ngang + Chia 3 dọc. Tất cả = Lưới 3x3 + Đường giữa.\n' +
-    '   - Xoá: tắt hết và xoá đường gióng của artboard đích.\n' +
+    '   - Xoá / nút "Xoá hết đường gióng": xoá MỌI đường gióng của artboard đích, kể cả đường bạn tự kéo tay.\n' +
+    '• Xoá nhanh không mở hộp thoại: giữ phím Shift rồi bấm tool = xoá hết đường gióng trong cả file (Ctrl+Z để lấy lại).\n' +
     '• Artboard đang chọn: bấm vào artboard (công cụ Artboard) hoặc chọn 1 layer trong nó rồi mở tool. Chọn nhiều artboard cũng được.\n' +
     '• Ô "Xoá đường gióng cũ trước khi kẻ": bật thì đường gióng cũ của artboard đích bị thay bằng đường mới.\n' +
     '• Xong = giữ lại. Hủy hoặc Esc = trả file như lúc mở tool.\n' +
@@ -250,7 +258,7 @@ function showDialog(arts, targets) {
     var bLuoi = ibtn('luoi3', 'Lưới 3x3: chia 3 ngang + chia 3 dọc', false);
     var bAll = ibtn('tatca', 'Tất cả: lưới 3x3 + đường giữa', false);
     gap();
-    var bXoa = ibtn('xoa', 'Xoá: tắt hết và xoá đường gióng của artboard đích', false);
+    var bXoa = ibtn('xoa', 'Xoá hết đường gióng của artboard đích (cả đường tự kéo tay)', false);
 
     var info = w.add('statictext', undefined, 'Rê chuột vào biểu tượng để xem tên, bấm là kẻ.');
     info.characters = 44;
@@ -265,7 +273,10 @@ function showDialog(arts, targets) {
     var cbClear = w.add('checkbox', undefined, 'Xoá đường gióng cũ trước khi kẻ');
     cbClear.value = prefs.clear;
 
-    var r3 = w.add('group'); r3.orientation = 'row'; r3.alignment = 'right'; r3.spacing = 4;
+    var r3 = w.add('group'); r3.orientation = 'row'; r3.alignment = 'fill'; r3.spacing = 4;
+    var bClr = r3.add('button', undefined, 'Xoá hết đường gióng');
+    bClr.helpTip = 'Xoá MỌI đường gióng của artboard đích (Artboard đang chọn / Tất cả), kể cả đường tự kéo tay.\nMẹo: giữ Shift khi bấm tool là xoá hết cả file ngay.';
+    var sp = r3.add('group'); sp.alignment = ['fill', 'center'];
     var bHelp = r3.add('button', undefined, '?'); bHelp.preferredSize = [26, 24];
     var bOk = r3.add('button', undefined, 'Xong', { name: 'ok' });
     r3.add('button', undefined, 'Hủy', { name: 'cancel' });
@@ -300,7 +311,7 @@ function showDialog(arts, targets) {
     bGiua.onClick = bNgang.onClick = bDoc.onClick = function () { redraw(false); };
     bLuoi.onClick = function () { setT(bNgang, true); setT(bDoc, true); redraw(false); };
     bAll.onClick = function () { setT(bGiua, true); setT(bNgang, true); setT(bDoc, true); redraw(false); };
-    bXoa.onClick = function () { setT(bGiua, false); setT(bNgang, false); setT(bDoc, false); redraw(true); };
+    bXoa.onClick = bClr.onClick = function () { setT(bGiua, false); setT(bNgang, false); setT(bDoc, false); redraw(true); };
     rbSel.onClick = rbAll.onClick = cbClear.onClick = function () {
         if (tval(bGiua) || tval(bNgang) || tval(bDoc)) redraw(false);
     };
@@ -313,6 +324,16 @@ function showDialog(arts, targets) {
 
 (function main() {
     if (!app.documents.length) { alert('Chưa mở file nào.'); return; }
+    var shift = false;
+    try { shift = ScriptUI.environment.keyboardState.shiftKey; } catch (e0) { }
+    if (shift) {
+        // Xoá nhanh: không mở hộp thoại, xoá hết đường gióng cả file, 1 bước History
+        var doc = app.activeDocument, n0 = 0;
+        try { n0 = doc.guides.length; } catch (e1) { }
+        try { doc.suspendHistory('Xoá hết đường gióng', 'clearGuidesFull(true, [])'); }
+        catch (e2) { alert('Không xoá được đường gióng: ' + e2); }
+        return;
+    }
     var arts = getArtboards();
     if (!arts.length) { alert('File này không có artboard nào.\nTạo artboard trước (công cụ Artboard) rồi chạy lại tool.'); return; }
     var byId = {};

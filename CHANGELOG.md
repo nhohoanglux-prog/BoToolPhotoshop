@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-26
+- KeDuongGiong.jsx v1.1.0: thêm nút "Xoá hết đường gióng" (xoá mọi đường gióng của artboard đang chọn hoặc tất cả, kể cả đường bạn tự kéo tay, khỏi kéo từng cái ra ngoài); xoá nhanh không mở hộp thoại: giữ phím Shift rồi bấm tool là xoá sạch đường gióng cả file (Ctrl+Z để lấy lại).
 - KeDuongGiong.jsx v1.0.0: tool mới "Đường gióng artboard": bấm biểu tượng là kẻ đường gióng để canh bố cục: đường giữa (chia đôi), chia 3 ngang, chia 3 dọc, lưới 3x3 hoặc tất cả; rê chuột vào biểu tượng mới hiện tên; áp cho artboard đang chọn hoặc tất cả artboard; Hủy là trả như cũ.
 - Panel Tool Launcher v1.6.0: mỗi tool có icon riêng. Thêm bảng "Thanh Tool" chỉ có icon của các tool bạn ghim (chuột phải vào tool trong Tool Launcher → Ghim lên Thanh Tool); kéo dính vào cạnh nào cũng được, tự xếp ngang hoặc dọc, rê chuột hiện tên. Cần tắt và mở lại Photoshop một lần sau khi cập nhật.
 

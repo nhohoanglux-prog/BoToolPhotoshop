@@ -36,9 +36,9 @@
     {
       "path": "KeDuongGiong.jsx",
       "name": "Đường gióng artboard",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "date": "2026-11-26",
-      "notes": "Tool mới \"Đường gióng artboard\": bấm biểu tượng là kẻ đường gióng để canh bố cục: đường giữa (chia đôi), chia 3 ngang, chia 3 dọc, lưới 3x3 hoặc tất cả; rê chuột vào biểu tượng mới hiện tên; áp cho artboard đang chọn hoặc tất cả artboard; Hủy là trả như cũ."
+      "notes": "Thêm nút \"Xoá hết đường gióng\" (xoá mọi đường gióng của artboard đang chọn hoặc tất cả, kể cả đường bạn tự kéo tay, khỏi kéo từng cái ra ngoài); xoá nhanh không mở hộp thoại: giữ phím Shift rồi bấm tool là xoá sạch đường gióng cả file (Ctrl+Z để lấy lại)."
     },
     {
       "path": "SoTrangTuDong.jsx",
@@ -63,6 +63,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-26",
+      "text": "KeDuongGiong.jsx v1.1.0: thêm nút \"Xoá hết đường gióng\" (xoá mọi đường gióng của artboard đang chọn hoặc tất cả, kể cả đường bạn tự kéo tay, khỏi kéo từng cái ra ngoài); xoá nhanh không mở hộp thoại: giữ phím Shift rồi bấm tool là xoá sạch đường gióng cả file (Ctrl+Z để lấy lại)."
+    },
     {
       "date": "2026-11-26",
       "text": "KeDuongGiong.jsx v1.0.0: tool mới \"Đường gióng artboard\": bấm biểu tượng là kẻ đường gióng để canh bố cục: đường giữa (chia đôi), chia 3 ngang, chia 3 dọc, lưới 3x3 hoặc tất cả; rê chuột vào biểu tượng mới hiện tên; áp cho artboard đang chọn hoặc tất cả artboard; Hủy là trả như cũ."
@@ -98,10 +102,6 @@
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.4.1: tự xoá các số trang cũ bị sót NGOÀI artboard từ những lần chạy trước (chúng hiện đè ở giữa trang trái mà tool không thấy); số mới luôn nằm trên cùng, trực tiếp trong artboard; \"Gỡ hết số\" xoá luôn số sót."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "SoTrangTuDong.jsx v1.4.0: sửa lỗi số trang trái nằm giữa theo số liệu bạn gửi: tool dời số rồi đo lại xem số thật sự đi tới đâu, tự chỉnh cho tới khi đúng góc; bảng \"Thông tin kiểm tra\" chỉ hiện khi số còn lệch."
     }
   ]
 }
