@@ -72,6 +72,10 @@
   "news": [
     {
       "date": "2026-11-26",
+      "text": "Bộ tool Photoshop giờ chỉ chứa tool Photoshop: plugin SketchUp \"Mặt bằng xiên\" đã chuyển sang kho riêng BoToolSketchUp (chia sẻ cho ai thì người đó chỉ nhận đúng bộ của phần mềm đó)."
+    },
+    {
+      "date": "2026-11-26",
       "text": "SketchUp Mặt bằng xiên v1.1.0: tự cập nhật như panel Photoshop: mở công cụ là tự kiểm tra, có bản mới thì hiện khung \"🔔 Có bản mới\", bấm \"⬇ Cập nhật ngay\" rồi tắt mở lại SketchUp; link \"Kiểm tra cập nhật\" để kiểm tra tay."
     },
     {
@@ -105,10 +109,6 @@
     {
       "date": "2026-11-25",
       "text": "XoayIsometric.jsx v1.6.1: sửa cùng loại lỗi đó ở chỗ chọn mặt Trên/Trái/Phải (chọn \"Trên\" có thể bị hiểu thành \"Phải\")."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "SoTrangTuDong.jsx v1.5.2: bảng \"Thông tin kiểm tra\" chi tiết hơn (vị trí điểm ảnh thật của số, layer nào đang được dời, mọi layer chữ cùng số trong file) để tìm đúng lỗi số trang trái nằm giữa."
     }
   ]
 }
