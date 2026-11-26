@@ -17,4 +17,9 @@ DÙNG
 - Nút "⬇ Cập nhật": bấm một lần là tải bản mới của panel và các tool về.
   Khi có bản mới, nút này chuyển màu xanh và hiện số lượng.
 
+THANH TOOL (chỉ có icon)
+- Chuột phải vào tool trong Tool Launcher > "Ghim lên Thanh Tool".
+- Mở bảng: Window > Extensions (legacy) > Thanh Tool. Kéo dính vào cạnh nào cũng được.
+- Rê chuột lên icon để xem tên, bấm để chạy.
+
 GỠ: tắt Photoshop, chạy "1_CaiPanel\GoCaiDat.bat".

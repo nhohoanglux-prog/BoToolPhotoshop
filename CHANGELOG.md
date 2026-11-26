@@ -2,6 +2,7 @@
 
 ## 2026-11-26
 - KeDuongGiong.jsx v1.0.0: tool mới "Đường gióng artboard": bấm biểu tượng là kẻ đường gióng để canh bố cục: đường giữa (chia đôi), chia 3 ngang, chia 3 dọc, lưới 3x3 hoặc tất cả; rê chuột vào biểu tượng mới hiện tên; áp cho artboard đang chọn hoặc tất cả artboard; Hủy là trả như cũ.
+- Panel Tool Launcher v1.6.0: mỗi tool có icon riêng. Thêm bảng "Thanh Tool" chỉ có icon của các tool bạn ghim (chuột phải vào tool trong Tool Launcher → Ghim lên Thanh Tool); kéo dính vào cạnh nào cũng được, tự xếp ngang hoặc dọc, rê chuột hiện tên. Cần tắt và mở lại Photoshop một lần sau khi cập nhật.
 
 ## 2026-11-25
 - SoTrangTuDong.jsx v1.7.0: màu số "Tự động" (bật sẵn): đo nền ngay chỗ đặt số trên từng trang, nền sáng thì số đen, nền tối thì số trắng; tắt ô "Tự động" để dùng 1 màu cố định như cũ.

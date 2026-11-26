@@ -5,6 +5,7 @@
   @desc: Một dòng mô tả ngắn tool này làm gì.
   @version: 1.0.0
   @date: 2026-11-25
+  @icon: sparkles
 */
 
 // Viết code của tool từ đây trở xuống.

@@ -19,7 +19,7 @@ function TL_trim(s) { return String(s).replace(/^\s+|\s+$/g, ''); }
 
 // Đọc phần đầu file để lấy @name / @group / @desc
 function TL_readHeader(file) {
-    var info = { name: '', group: '', desc: '', version: '', date: '' };
+    var info = { name: '', group: '', desc: '', version: '', date: '', icon: '' };
     if (/\.jsxbin$/i.test(file.name)) return info; // file đã mã hóa, không đọc được chữ
     try {
         file.encoding = 'UTF-8';
@@ -32,6 +32,7 @@ function TL_readHeader(file) {
         m = txt.match(/@desc\s*:\s*([^\r\n*]+)/i);  if (m) info.desc = TL_trim(m[1]);
         m = txt.match(/@version\s*:\s*([^\r\n*]+)/i); if (m) info.version = TL_trim(m[1]);
         m = txt.match(/@date\s*:\s*([^\r\n*]+)/i);    if (m) info.date = TL_trim(m[1]);
+        m = txt.match(/@icon\s*:\s*([^\r\n*]+)/i);    if (m) info.icon = TL_trim(m[1]);
     } catch (e) { try { file.close(); } catch (e2) {} }
     return info;
 }
@@ -53,7 +54,8 @@ function TL_scan(folder, depth, subGroup, list) {
                 group: h.group || subGroup || 'Khác',
                 desc: h.desc,
                 version: h.version,
-                date: h.date
+                date: h.date,
+                icon: h.icon
             });
         }
     }
@@ -71,7 +73,7 @@ function TL_listTools(encPath) {
             parts.push('{"path":' + TL_esc(t.path) + ',"file":' + TL_esc(t.file) +
                 ',"name":' + TL_esc(t.name) + ',"group":' + TL_esc(t.group) +
                 ',"desc":' + TL_esc(t.desc) + ',"version":' + TL_esc(t.version) +
-                ',"date":' + TL_esc(t.date) + '}');
+                ',"date":' + TL_esc(t.date) + ',"icon":' + TL_esc(t.icon) + '}');
         }
         return '{"tools":[' + parts.join(',') + ']}';
     } catch (e) {
@@ -126,4 +128,21 @@ function TL_writeFile(encPath, encContent) {
 function TL_reloadHost(encPath) {
     try { $.evalFile(new File(decodeURIComponent(encPath))); return 'OK'; }
     catch (e) { return 'ERR:' + (e.message || e); }
+}
+
+// ---- Thanh Tool: lưu danh sách tool được ghim vào file chung cho 2 bảng ----
+function TL_prefsFile() {
+    var f = new Folder(Folder.userData.fsName + '/BoToolPhotoshop');
+    if (!f.exists) f.create();
+    return f.fsName + '/ThanhTool.json';
+}
+function TL_readText(encPath) {
+    try {
+        var f = new File(decodeURIComponent(encPath));
+        if (!f.exists) return '';
+        f.encoding = 'UTF-8';
+        if (!f.open('r')) return '';
+        var s = f.read(); f.close();
+        return s;
+    } catch (e) { return ''; }
 }
