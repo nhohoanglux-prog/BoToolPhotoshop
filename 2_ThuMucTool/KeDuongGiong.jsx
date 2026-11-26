@@ -5,6 +5,7 @@
   @desc: Bấm biểu tượng là kẻ đường gióng: đường giữa, chia 3 ngang, chia 3 dọc, lưới 3x3 cho artboard đang chọn hoặc tất cả.
   @version: 1.0.0
   @date: 2026-11-26
+  @icon: grid-3x3
 
   KeDuongGiong.jsx – kẻ đường gióng (guide) để canh bố cục trong artboard
   - Các nút biểu tượng bật / tắt được, rê chuột vào mới hiện chữ (giống thanh công cụ):
