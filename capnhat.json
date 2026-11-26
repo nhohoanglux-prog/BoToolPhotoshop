@@ -72,11 +72,15 @@
   "news": [
     {
       "date": "2026-11-26",
+      "text": "SketchUp Mặt bằng xiên v1.1.0: tự cập nhật như panel Photoshop: mở công cụ là tự kiểm tra, có bản mới thì hiện khung \"🔔 Có bản mới\", bấm \"⬇ Cập nhật ngay\" rồi tắt mở lại SketchUp; link \"Kiểm tra cập nhật\" để kiểm tra tay."
+    },
+    {
+      "date": "2026-11-26",
       "text": "HatAnh.jsx v1.0.0: tool mới \"Hạt ảnh\": phủ 1 lớp hạt nhẹ như ảnh phim (hợp ảnh nền tối) hoặc vân giấy vẽ (hợp ảnh nền sáng), chỉnh lượng hạt, độ mềm, độ đậm; dùng cho ảnh mặt bằng xiên xuất từ SketchUp."
     },
     {
       "date": "2026-11-26",
-      "text": "Plugin SketchUp \"Mặt bằng xiên\" v1.0.0 (cài riêng bằng file MatBangXien.rbz): biến mô hình thành ảnh mặt bằng xiên kiểu axonometric: chọn cao độ cắt (gõ số, bấm vào mô hình, hoặc nhiều tầng), góc xiên 15–75° hay tự gõ, hướng đổ, xoay mặt bằng; 8 kiểu hiển thị (nền đen cắt trắng như ref, vẽ tay chì, bút bi xanh...), xuất PNG."
+      "text": "SketchUp Mặt bằng xiên v1.0.0: plugin SketchUp mới (cài bằng file MatBangXien.rbz): biến mô hình thành ảnh mặt bằng xiên kiểu axonometric: chọn cao độ cắt (gõ số, bấm vào mô hình, hoặc nhiều tầng), góc xiên 15–75° hay tự gõ, hướng đổ, xoay mặt bằng; 8 kiểu hiển thị (nền đen cắt trắng như ref, vẽ tay chì, bút bi xanh...), xuất PNG."
     },
     {
       "date": "2026-11-26",
@@ -105,10 +109,6 @@
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.5.2: bảng \"Thông tin kiểm tra\" chi tiết hơn (vị trí điểm ảnh thật của số, layer nào đang được dời, mọi layer chữ cùng số trong file) để tìm đúng lỗi số trang trái nằm giữa."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "SoTrangTuDong.jsx v1.5.1: font mặc định Montserrat (máy không có thì Arial); khi mở tool, nếu tìm thấy số trang cũ do bản trước tạo thừa (thường là số nằm giữa trang trái) thì hỏi bạn có xoá không."
     }
   ]
 }

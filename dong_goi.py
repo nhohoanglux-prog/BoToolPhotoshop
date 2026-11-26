@@ -49,6 +49,13 @@ with zipfile.ZipFile(rbz, 'w', zipfile.ZIP_DEFLATED) as zf:
         for f in sorted(fs):
             fp = os.path.join(dp, f)
             zf.write(fp, os.path.relpath(fp, SRC).replace(os.sep, '/'))
+# capnhat_sketchup.json: nút "⬇ Cập nhật" trong plugin đọc file này (version so với VERSION trong plugin)
+loader = open(os.path.join(SRC, 'phuc_mat_bang_xien.rb'), encoding='utf-8').read()
+sv = re.search(r"VERSION = '([^']+)'", loader).group(1)
+sd = re.search(r"DATE = '([^']+)'", loader).group(1)
+sfiles = sorted(os.path.relpath(os.path.join(dp, f), SRC).replace(os.sep, '/') for dp, _, fs in os.walk(SRC) for f in fs)
+json.dump({'version': sv, 'date': sd, 'notes': note_for('SketchUp Mặt bằng xiên', sv), 'files': sfiles},
+          open(os.path.join(SU, 'capnhat_sketchup.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
 outdir = os.path.dirname(sys.argv[1]) if len(sys.argv) > 1 else '/mnt/project-files'
 with zipfile.ZipFile(os.path.join(outdir, 'MatBangXien_SketchUp.zip'), 'w', zipfile.ZIP_DEFLATED) as zf:
     zf.write(rbz, 'MatBangXien_SketchUp/MatBangXien.rbz')
@@ -61,4 +68,4 @@ with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as zf:
         paths = [p] if os.path.isfile(p) else [os.path.join(dp, f) for dp, _, fs in os.walk(p) for f in fs]
         for fp in paths:
             zf.write(fp, os.path.join('BoToolPhotoshop', os.path.relpath(fp, ROOT)))
-print('OK', out, 'panel', pv, [(t['path'], t['version'], bool(t['notes'])) for t in info['tools']])
+print('OK', out, 'sketchup', sv, 'panel', pv, [(t['path'], t['version'], bool(t['notes'])) for t in info['tools']])

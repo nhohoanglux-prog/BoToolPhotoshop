@@ -1,12 +1,12 @@
 # encoding: UTF-8
 # Mặt bằng xiên (plan oblique) – BoToolPhotoshop
-# Phiên bản 1.0.0 – 2026-11-26
+# Phiên bản 1.1.0 – 2026-11-26
 require 'sketchup.rb'
 require 'extensions.rb'
 
 module PhucTools
   module MatBangXien
-    VERSION = '1.0.0' unless defined?(VERSION)
+    VERSION = '1.1.0' unless defined?(VERSION)
     DATE = '2026-11-26' unless defined?(DATE)
     unless defined?(@loaded_ext)
       ext = SketchupExtension.new('Mặt bằng xiên (Phúc)', 'phuc_mat_bang_xien/main')

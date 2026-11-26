@@ -1,0 +1,10 @@
+{
+  "version": "1.1.0",
+  "date": "2026-11-26",
+  "notes": "Tự cập nhật như panel Photoshop: mở công cụ là tự kiểm tra, có bản mới thì hiện khung \"🔔 Có bản mới\", bấm \"⬇ Cập nhật ngay\" rồi tắt mở lại SketchUp; link \"Kiểm tra cập nhật\" để kiểm tra tay.",
+  "files": [
+    "phuc_mat_bang_xien.rb",
+    "phuc_mat_bang_xien/dialog.html",
+    "phuc_mat_bang_xien/main.rb"
+  ]
+}
