@@ -27,6 +27,8 @@ HuongDan.txt                      hướng dẫn cài 5 bước (UTF-8 có BOM, 
 - Cập nhật: so `capnhat.json` với phiên bản tại máy, tải hết rồi mới ghi đè (qua `TL_writeFile` trong host.jsx, .jsx ghi kèm BOM). Tool khớp theo tên file. Panel cập nhật thì tự tải lại.
 - Khi Photoshop đang Transform/mở hộp thoại, evalScript xếp hàng chờ: sau 3 giây panel báo "Photoshop đang bận" và tự chạy tiếp; chỉ so phiên bản tool sau khi quét xong thư mục (tránh ghi nhầm "tool mới").
 - Tự ẩn khi chạy tool (v1.5.0, mặc định bật, ô "Tự ẩn bảng khi chạy tool", localStorage tl.autoHide): manifest có thêm extension ẩn `com.phuc.toollauncher.bg` (bg.html/js/bg.js, Type Custom, StartOn applicationActivate; panel cũng requestOpenExtension nó). Bắt tay run → ack → go: bảng gửi run, bg trả ack, bảng gửi go rồi closeExtension; bg chạy `$.evalFile` trong engine của nó, xong thì requestOpenExtension lại bảng (lỗi thì alert). Không có ack trong 1,2 giây (chưa khởi động lại Photoshop sau khi thêm extension) thì chạy ngay trong bảng như cũ, không bao giờ chạy 2 lần. CHƯA kiểm chứng trên Photoshop thật.
+- Icon + Thanh Tool (v1.6.0): icon Lucide (ISC, icons-LICENSE.txt) nhúng trong js/icons.js; tool chọn icon bằng dòng `@icon: <tên>` ở đầu file, chưa có thì dùng TL_ICON_BY_FILE trong icons.js, không có nữa thì vẽ chữ cái đầu. Tên icon có sẵn: align-center, axis-3d, blend, book-open, box, boxes, brush, building-2, camera, circle, clipboard-list, contrast, copy, crop, cuboid, download, droplet, eraser, eye, feather, file-down, file-image, file-output, file-text, flip-horizontal-2, folder, folder-open, frame, gauge, grid-3x3, hash, house, image, images, layers, layers-2, layout-grid, layout-template, link, list-ordered, lock, map, maximize, minimize, moon, move, paintbrush, palette, panels-top-left, pen-tool, pin, pin-off, pipette, printer, puzzle, rectangle-horizontal, refresh-cw, rotate-cw, ruler, save, scaling, scan-line, scissors, search, settings, shapes, sliders-horizontal, sparkles, spline, square, stamp, star, sticker, sun, table, text, trash-2, tree-pine, triangle, type, upload, wand, wand-sparkles, wrench, zap. Muốn icon khác: lấy từ gói npm lucide-static rồi thêm vào icons.js (tăng phiên bản panel).
+  Thanh Tool = extension `com.phuc.toollauncher.bar` (bar.html/js/bar.js/css/bar.css, Panel, Menu "Thanh Tool", dùng chung host.jsx): chỉ hiện tool đã ghim, chỉ icon, tooltip = title, rộng > cao thì xếp ngang. Ghim: chuột phải tool trong Tool Launcher → menu Ghim/Bỏ ghim/Mở Thanh Tool/Chạy tool. Danh sách ghim + thư mục lưu ở `Folder.userData/BoToolPhotoshop/ThanhTool.json` ({folder, pins:[tên file viết thường]}), đổi xong bắn sự kiện CSXS `com.phuc.toollauncher.pins` để Thanh Tool tải lại. Thanh Tool chạy tool ngay trong engine của nó (không tự ẩn). CHƯA kiểm chứng trên Photoshop thật.
 - Người dùng đã chạy panel trên Photoshop thật (v1.2.0 hoạt động).
 
 ## Quy ước đầu file mỗi tool (bắt buộc, lưu UTF-8 có BOM)
@@ -38,6 +40,7 @@ HuongDan.txt                      hướng dẫn cài 5 bước (UTF-8 có BOM, 
   @desc: Một dòng mô tả ngắn.
   @version: 1.0.0
   @date: 2026-11-25
+  @icon: box            (không bắt buộc, tên icon Lucide, xem danh sách bên dưới)
 */
 ```
 

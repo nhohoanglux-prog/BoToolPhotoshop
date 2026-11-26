@@ -3,7 +3,7 @@
     'use strict';
 
     // ===== Phiên bản panel – tăng số này mỗi lần sửa panel =====
-    var PANEL_VERSION = '1.5.0';
+    var PANEL_VERSION = '1.6.0';
     var PANEL_DATE = '2026-11-25';
     // Nơi lấy bản mới (kho GitHub công khai, cùng cấu trúc với file zip)
     var REPO = 'nhohoanglux-prog/BoToolPhotoshop';
@@ -91,9 +91,65 @@
         }
     }
 
+    // ---- Ghim tool lên Thanh Tool (bảng icon thứ hai) ----
+    // Danh sách ghim lưu ở file chung (Folder.userData/BoToolPhotoshop/ThanhTool.json) để Thanh Tool đọc được.
+    var BAR_ID = 'com.phuc.toollauncher.bar', pins = [], prefsPath = '';
+    function isPinned(t) { return pins.indexOf(t.file.toLowerCase()) >= 0; }
+    function loadPins(cb) {
+        if (!cep) { pins = loadJSON('tl.pins', []); return cb && cb(); }
+        call('TL_prefsFile', undefined, function (p) {
+            prefsPath = p;
+            call('TL_readText', p, function (txt) {
+                try { var d = JSON.parse(txt); pins = d.pins || []; } catch (e) { pins = []; }
+                if (cb) cb();
+            });
+        });
+    }
+    function savePins() {
+        var data = JSON.stringify({ folder: store(KEY_FOLDER) || '', pins: pins }, null, 1);
+        if (!cep) { store('tl.pins', JSON.stringify(pins)); return; }
+        if (!prefsPath) return;
+        hostCall('TL_writeFile', [prefsPath, data], function () {
+            cep.dispatchEvent({ type: 'com.phuc.toollauncher.pins', scope: 'APPLICATION', appId: '', extensionId: 'com.phuc.toollauncher.panel', data: '' });
+        });
+    }
+    function togglePin(t) {
+        var k = t.file.toLowerCase(), i = pins.indexOf(k);
+        if (i >= 0) { pins.splice(i, 1); setStatus('Đã bỏ ghim: ' + t.name); }
+        else { pins.push(k); setStatus('Đã ghim lên Thanh Tool: ' + t.name); openBar(); }
+        savePins(); render();
+    }
+    function openBar() { if (cep) { try { cep.requestOpenExtension(BAR_ID, ''); } catch (e) {} } }
+
+    var menuEl = null;
+    function hideMenu() { if (menuEl) { menuEl.remove(); menuEl = null; } }
+    function showMenu(t, x, y) {
+        hideMenu();
+        menuEl = document.createElement('div');
+        menuEl.className = 'ctx';
+        var items = [
+            { text: (isPinned(t) ? 'Bỏ ghim khỏi Thanh Tool' : 'Ghim lên Thanh Tool'), icon: isPinned(t) ? 'pin-off' : 'pin', fn: function () { togglePin(t); } },
+            { text: 'Mở Thanh Tool', icon: 'panels-top-left', fn: openBar },
+            { text: 'Chạy tool', icon: 'zap', fn: function () { runTool(t); } }
+        ];
+        items.forEach(function (it) {
+            var b = document.createElement('div');
+            b.className = 'ctxi';
+            b.innerHTML = window.TL_iconSvg({ icon: it.icon }, 14) + '<span>' + esc(it.text) + '</span>';
+            b.onclick = function () { hideMenu(); it.fn(); };
+            menuEl.appendChild(b);
+        });
+        document.body.appendChild(menuEl);
+        var w = menuEl.offsetWidth, h = menuEl.offsetHeight;
+        menuEl.style.left = Math.max(4, Math.min(x, window.innerWidth - w - 4)) + 'px';
+        menuEl.style.top = Math.max(4, Math.min(y, window.innerHeight - h - 4)) + 'px';
+    }
+    document.addEventListener('mousedown', function (e) { if (menuEl && !menuEl.contains(e.target)) hideMenu(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hideMenu(); });
+
     function pickFolder() {
         call('TL_pickFolder', undefined, function (p) {
-            if (p) { store(KEY_FOLDER, p); reload(); }
+            if (p) { store(KEY_FOLDER, p); savePins(); reload(); }
         });
     }
 
@@ -156,9 +212,11 @@
                 var el = document.createElement('div');
                 el.className = 'tool';
                 el.title = t.path;
-                el.innerHTML = '<div class="name">' + highlight(t.name, words) + (t.isNew ? '<span class="badge" title="Tool mới hoặc vừa được cập nhật">MỚI</span>' : '') + '</div>' + (t.desc ? '<div class="desc">' + highlight(t.desc, words) + '</div>' : '') +
-                    (t.version || t.date ? '<div class="ver">' + (t.version ? 'v' + esc(t.version) : '') + (t.version && t.date ? ' · ' : '') + (t.date ? 'cập nhật ' + esc(fmtDate(t.date)) : '') + '</div>' : '');
+                el.innerHTML = '<div class="ico">' + window.TL_iconSvg(t, 18) + '</div><div class="txt"><div class="name">' + highlight(t.name, words) + (t.isNew ? '<span class="badge" title="Tool mới hoặc vừa được cập nhật">MỚI</span>' : '') + '</div>' + (t.desc ? '<div class="desc">' + highlight(t.desc, words) + '</div>' : '') +
+                    (t.version || t.date ? '<div class="ver">' + (t.version ? 'v' + esc(t.version) : '') + (t.version && t.date ? ' · ' : '') + (t.date ? 'cập nhật ' + esc(fmtDate(t.date)) : '') + '</div>' : '') + '</div>' +
+                    (isPinned(t) ? '<div class="pinmark" title="Đã ghim lên Thanh Tool">' + window.TL_iconSvg({ icon: 'pin' }, 13) + '</div>' : '');
                 el.onclick = function () { runTool(t, el); };
+                el.oncontextmenu = function (e) { e.preventDefault(); showMenu(t, e.clientX, e.clientY); };
                 if (!closed[g]) { el.dataset.idx = visible.length; visible.push({ t: t, el: el }); }
                 box.appendChild(el);
             });
@@ -440,6 +498,7 @@
     chk.onchange = function () { store(KEY_AUTOHIDE, chk.checked ? '1' : '0'); setStatus(chk.checked ? 'Bấm tool thì bảng tự ẩn, chạy xong tự hiện lại.' : 'Bảng sẽ không tự ẩn khi chạy tool.'); };
     // Đánh thức phần chạy ngầm (nếu Photoshop chưa tự bật)
     if (cep) { try { cep.requestOpenExtension(BG_ID, ''); } catch (e) {} }
+    loadPins(function () { render(); });
     reload();
     // Thông báo sau khi panel vừa tự cập nhật và tải lại
     // Lần đầu mở một phiên bản panel mới: tự hiện "Có gì mới"

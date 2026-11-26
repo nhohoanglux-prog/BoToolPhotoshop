@@ -1,5 +1,8 @@
 # Nhật ký cập nhật
 
+## 2026-11-26
+- Panel Tool Launcher v1.6.0: mỗi tool có icon riêng. Thêm bảng "Thanh Tool" chỉ có icon của các tool bạn ghim (chuột phải vào tool trong Tool Launcher → Ghim lên Thanh Tool); kéo dính vào cạnh nào cũng được, tự xếp ngang hoặc dọc, rê chuột hiện tên. Cần tắt và mở lại Photoshop một lần sau khi cập nhật.
+
 ## 2026-11-25
 - SoTrangTuDong.jsx v1.7.0: màu số "Tự động" (bật sẵn): đo nền ngay chỗ đặt số trên từng trang, nền sáng thì số đen, nền tối thì số trắng; tắt ô "Tự động" để dùng 1 màu cố định như cũ.
 - SoTrangTuDong.jsx v1.6.0: ĐÃ TÌM RA lỗi số trang trái nằm giữa: Photoshop hiểu sai một kiểu câu lệnh chọn trái/giữa/phải nên "trái" bị đọc thành "giữa". Đã sửa, số trang chẵn giờ nằm đúng góc trái; bỏ bảng thông tin kiểm tra.

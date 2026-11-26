@@ -1,14 +1,19 @@
 {
   "panel": {
-    "version": "1.5.0",
+    "version": "1.6.0",
     "date": "2026-11-25",
-    "notes": "Bấm tool thì bảng tự ẩn cho đỡ che màn hình, tool chạy xong bảng tự hiện lại. Tắt được bằng ô \"Tự ẩn bảng khi chạy tool\" ở cuối bảng. Cần tắt và mở lại Photoshop một lần sau khi cập nhật.",
+    "notes": "Mỗi tool có icon riêng. Thêm bảng \"Thanh Tool\" chỉ có icon của các tool bạn ghim (chuột phải vào tool trong Tool Launcher → Ghim lên Thanh Tool); kéo dính vào cạnh nào cũng được, tự xếp ngang hoặc dọc, rê chuột hiện tên. Cần tắt và mở lại Photoshop một lần sau khi cập nhật.",
     "files": [
       "CSXS/manifest.xml",
+      "bar.html",
       "bg.html",
+      "css/bar.css",
       "css/style.css",
+      "icons-LICENSE.txt",
       "index.html",
+      "js/bar.js",
       "js/bg.js",
+      "js/icons.js",
       "js/main.js",
       "jsx/host.jsx"
     ]
@@ -52,6 +57,10 @@
   ],
   "news": [
     {
+      "date": "2026-11-26",
+      "text": "Panel Tool Launcher v1.6.0: mỗi tool có icon riêng. Thêm bảng \"Thanh Tool\" chỉ có icon của các tool bạn ghim (chuột phải vào tool trong Tool Launcher → Ghim lên Thanh Tool); kéo dính vào cạnh nào cũng được, tự xếp ngang hoặc dọc, rê chuột hiện tên. Cần tắt và mở lại Photoshop một lần sau khi cập nhật."
+    },
+    {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.7.0: màu số \"Tự động\" (bật sẵn): đo nền ngay chỗ đặt số trên từng trang, nền sáng thì số đen, nền tối thì số trắng; tắt ô \"Tự động\" để dùng 1 màu cố định như cũ."
     },
@@ -86,10 +95,6 @@
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.3.1: bấm \"Xem trước\" sẽ hiện thêm một bảng \"Thông tin kiểm tra\" (vị trí artboard và số trang của trang trái), bạn chụp gửi lại để tìm đúng lỗi số trang trái nằm giữa."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "SoTrangTuDong.jsx v1.3.0: đổi hẳn cách đặt số: dùng lệnh Align của Photoshop canh theo chính artboard (như bấm canh trái/phải, canh dưới) rồi dời vào đúng lề, nên số ở trang trái phải nằm góc trái."
     }
   ]
 }
