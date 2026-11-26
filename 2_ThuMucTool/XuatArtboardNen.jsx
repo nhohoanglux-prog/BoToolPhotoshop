@@ -3,8 +3,8 @@
   @name: Xuất artboard nén theo dung lượng
   @group: Xuất file
   @desc: Xuất tất cả artboard theo thứ tự trang ra PDF, JPG hoặc PNG, tự nén cho tổng dung lượng vừa giới hạn MB.
-  @version: 1.6.0
-  @date: 2026-11-25
+  @version: 1.7.0
+  @date: 2026-11-26
 
   XuatArtboardNen.jsx
   - Lấy tất cả artboard trong file đang mở, sắp theo thứ tự trang
@@ -88,6 +88,13 @@ function sortByName(list) {
 var FMT_NAMES = ['PDF', 'JPG', 'PNG'];
 
 // Bỏ ký tự Windows không cho dùng trong tên file, bỏ đuôi .pdf/.jpg/.png nếu lỡ gõ
+// Ngày giờ gắn vào tên file: 2026-11-26_10h43
+function stampNow() {
+    var d = new Date();
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '_' + p(d.getHours()) + 'h' + p(d.getMinutes());
+}
+
 function cleanName(str) {
     var x = String(str || '').replace(/[\\\/:*?"<>|]/g, '').replace(/^\s+|\s+$/g, '');
     return x.replace(/\.(pdf|jpe?g|png)$/i, '').replace(/^\s+|\s+$/g, '');
@@ -143,6 +150,10 @@ function showDialog(total, docName, docFolder) {
     gName.add('statictext', undefined, 'Tên file:');
     var nameTxt = gName.add('edittext', undefined, ''); nameTxt.characters = 30;
     var nameHint = gName.add('statictext', undefined, '(để trống = ' + docName + ')');
+    var stampChk = p3.add('checkbox', undefined, 'Thêm ngày giờ vào tên (mỗi lần xuất 1 tên riêng, không trùng, dễ tìm)');
+    stampChk.value = true;
+    var openChk = p3.add('checkbox', undefined, 'Xuất xong tự mở thư mục và bôi chọn sẵn file vừa xuất');
+    openChk.value = true;
     var g6 = p3.add('group');
     var outTxt = g6.add('statictext', undefined, ''); outTxt.characters = 45;
     var browse = g6.add('button', undefined, 'Chọn...');
@@ -154,11 +165,13 @@ function showDialog(total, docName, docFolder) {
             ? 'PNG không mất dữ liệu nên script chỉ hạ độ phân giải cho vừa giới hạn. Đo nhanh vài trang rồi xuất 1 lần.'
             : 'Script đo nhanh vài trang, chọn sẵn chất lượng và DPI cho vừa giới hạn, rồi xuất 1 lần.';
         var nm = cleanName(nameTxt.text) || docName;
-        outTxt.text = f === 0 ? pdfFile.parent.fsName + '\\' + nm + '.pdf'
-                              : imgFolder.fsName + '\\' + nm + '_01' + (f === 2 ? '.png' : '.jpg') + ' ...';
+        var st = stampChk.value ? '_' + stampNow() : '';
+        if (f === 0) outTxt.text = pdfFile.parent.fsName + '\\' + nm + st + '.pdf';
+        else outTxt.text = imgFolder.fsName + '\\' + (st ? nm + st + '\\' : '') + nm + '_01' + (f === 2 ? '.png' : '.jpg') + ' ...';
     }
     fmt.onChange = refresh;
     nameTxt.onChanging = refresh;
+    stampChk.onClick = refresh;
     browse.onClick = function () {
         if (fmt.selection.index === 0) {
             var cur = new File(pdfFile.parent.fsName + '/' + (cleanName(nameTxt.text) || docName) + '.pdf');
@@ -200,7 +213,9 @@ function showDialog(total, docName, docFolder) {
         minDpi: Math.max(30, parseInt(minDpi.text, 10) || 72),
         pdfFile: new File(pdfFile.parent.fsName + '/' + (cleanName(nameTxt.text) || docName) + '.pdf'),
         imgFolder: imgFolder,
-        baseName: cleanName(nameTxt.text) || docName
+        baseName: cleanName(nameTxt.text) || docName,
+        stamp: stampChk.value,
+        autoOpen: openChk.value
     };
 }
 
@@ -504,40 +519,78 @@ function planSettings(M, O, order, pages, tmp, dpi, q, log) {
 }
 
 // ---------- Mở file / thư mục sau khi xuất ----------
-// Mở File Explorer và tô sẵn file vừa xuất. Dùng file .vbs tạm (lưu UTF-16) để đường dẫn
-// có tiếng Việt có dấu không bị lỗi. Không được thì mở thư mục chứa file.
+// Chạy 1 đoạn PowerShell ẩn, KHÔNG chờ. Đoạn lệnh được mã hoá base64 (UTF-16 LE) nên
+// đường dẫn có tiếng Việt có dấu (ví dụ "D:\DỮ LIỆU\...") không bị hỏng khi qua cmd.
+function b64(bytes) {
+    var A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/', out = '';
+    for (var i = 0; i < bytes.length; i += 3) {
+        var b0 = bytes[i], b1 = (i + 1 < bytes.length) ? bytes[i + 1] : 0, b2 = (i + 2 < bytes.length) ? bytes[i + 2] : 0;
+        out += A.charAt(b0 >> 2) + A.charAt(((b0 & 3) << 4) | (b1 >> 4));
+        out += (i + 1 < bytes.length) ? A.charAt(((b1 & 15) << 2) | (b2 >> 6)) : '=';
+        out += (i + 2 < bytes.length) ? A.charAt(b2 & 63) : '=';
+    }
+    return out;
+}
+function runPS(script) {
+    var bytes = [];
+    for (var i = 0; i < script.length; i++) { var cc = script.charCodeAt(i); bytes.push(cc & 255, (cc >> 8) & 255); }
+    app.system('start "" /min powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand ' + b64(bytes));
+}
+function psQuote(s) { return "'" + String(s).replace(/'/g, "''") + "'"; }
+
+// Mở File Explorer ở thư mục chứa file và BÔI CHỌN đúng file đó (cuộn tới, đặt con trỏ vào).
+// explorer /select đôi khi không chọn khi thư mục đã mở sẵn, nên chờ cửa sổ rồi chọn lại qua Shell.Application.
 function revealInExplorer(path) {
     var f = new File(path);
     if ($.os.indexOf('Windows') !== 0) { f.parent.execute(); return; }
     try {
-        var cmd = 'CreateObject("WScript.Shell").Run "explorer.exe /select,""' + f.fsName + '""", 1, False\r\n';
-        var vbs = new File(Folder.temp.fsName + '/MoThuMuc_' + new Date().getTime() + '.vbs');
-        vbs.encoding = 'BINARY';
-        if (!vbs.open('w')) throw new Error('vbs');
-        var out = String.fromCharCode(255, 254);       // BOM UTF-16 LE
-        for (var i = 0; i < cmd.length; i++) {
-            var cc = cmd.charCodeAt(i);
-            out += String.fromCharCode(cc & 255, (cc >> 8) & 255);
-        }
-        vbs.write(out); vbs.close();
-        if (!vbs.execute()) throw new Error('run');
+        runPS(
+            '$p = ' + psQuote(f.fsName) + '\n' +
+            '$d = Split-Path -Parent $p; $n = Split-Path -Leaf $p\n' +
+            'Start-Process explorer.exe -ArgumentList (\'/select,"\' + $p + \'"\')\n' +
+            '$sh = New-Object -ComObject Shell.Application\n' +
+            'for ($i = 0; $i -lt 24; $i++) {\n' +
+            '  Start-Sleep -Milliseconds 250\n' +
+            '  foreach ($w in @($sh.Windows())) {\n' +
+            '    try {\n' +
+            '      if ($w.Document.Folder.Self.Path -eq $d) {\n' +
+            '        $it = $w.Document.Folder.ParseName($n)\n' +
+            '        if ($it) { $w.Document.SelectItem($it, 29); exit }\n' +
+            '      }\n' +
+            '    } catch {}\n' +
+            '  }\n' +
+            '}\n');
     } catch (e) {
         f.parent.execute();
     }
 }
 
-function showResult(msg, saved, isPdf) {
+function copyToClipboard(text) {
+    try { runPS('Set-Clipboard -Value ' + psQuote(text)); return true; } catch (e) { return false; }
+}
+
+function showResult(msg, saved, isPdf, mainPath) {
     var w = new Window('dialog', 'Xuất xong');
     w.alignChildren = 'fill';
+    if (saved.length) {
+        var pp = w.add('panel', undefined, isPdf ? 'File vừa xuất' : 'Thư mục chứa ảnh vừa xuất');
+        pp.alignChildren = 'fill';
+        var nameLine = pp.add('statictext', undefined, decodeURI(new File(saved[0]).name) + (isPdf ? '' : '  (và ' + (saved.length - 1) + ' ảnh khác)'));
+        try { nameLine.graphics.font = ScriptUI.newFont(nameLine.graphics.font.name, 'BOLD', nameLine.graphics.font.size + 2); } catch (e) {}
+        var pathBox = pp.add('edittext', undefined, mainPath, { readonly: true });
+        pathBox.characters = 70;
+    }
     var box = w.add('edittext', undefined, msg, { multiline: true, readonly: true, scrolling: true });
-    box.preferredSize = [520, 260];
+    box.preferredSize = [560, 200];
     var b = w.add('group'); b.alignment = 'right';
     if (saved.length) {
-        var openDir = b.add('button', undefined, 'Mở thư mục chứa file');
-        openDir.helpTip = 'Mở File Explorer, tô sẵn file vừa xuất.';
+        var openDir = b.add('button', undefined, 'Mở thư mục, chọn file');
+        openDir.helpTip = 'Mở File Explorer, bôi chọn sẵn file vừa xuất.';
         openDir.onClick = function () { revealInExplorer(saved[0]); w.close(); };
         var openFile = b.add('button', undefined, isPdf ? 'Mở file PDF' : 'Mở ảnh đầu tiên');
         openFile.onClick = function () { new File(saved[0]).execute(); w.close(); };
+        var cp = b.add('button', undefined, 'Chép đường dẫn');
+        cp.onClick = function () { if (copyToClipboard(mainPath)) cp.text = 'Đã chép ✓'; };
     }
     b.add('button', undefined, 'Đóng', { name: 'ok' });
     w.show();
@@ -578,6 +631,11 @@ function countLightLayers() {
     if (!all.length) { alert('File này không có artboard nào.'); return; }
     var O = showDialog(all.length, docName, folder);
     if (!O) return;
+    if (O.stamp) {
+        var stp = stampNow();
+        if (O.fmt === 0) O.pdfFile = new File(O.pdfFile.parent.fsName + '/' + O.baseName + '_' + stp + '.pdf');
+        else O.imgFolder = new Folder(O.imgFolder.fsName + '/' + O.baseName + '_' + stp);
+    }
 
     var arts = getArtboards(O.skipHidden);
     if (!arts.length) { alert('Không còn artboard nào để xuất (có thể tất cả đang ẩn).'); return; }
@@ -680,5 +738,6 @@ function countLightLayers() {
         '\nThiết lập cuối: ' + Math.round(result.dpi) + ' DPI' + (O.fmt === 2 ? '' : ', chất lượng JPEG ' + result.q) +
         '\n\n' + result.log.join('\n');
     if (!result.ok) msg += '\n\nThử giảm "Không hạ dưới (DPI)", tăng giới hạn MB' + (O.fmt === 2 ? ', hoặc đổi sang JPG.' : '.');
-    showResult(msg, saved, O.fmt === 0);
+    if (O.autoOpen && saved.length) revealInExplorer(saved[0]);
+    showResult(msg, saved, O.fmt === 0, where);
 })();

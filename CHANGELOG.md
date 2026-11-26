@@ -1,6 +1,7 @@
 # Nhật ký cập nhật
 
 ## 2026-11-26
+- XuatArtboardNen.jsx v1.7.0: xuất xong tự mở File Explorer và bôi chọn đúng file vừa xuất (sửa lỗi chỉ mở thư mục mà không chọn file); tên file tự gắn ngày giờ (ví dụ "Port_2026-11-26_10h43.pdf", JPG/PNG thì vào thư mục riêng cùng tên) để không trùng, dễ tìm; bảng kết quả ghi rõ tên và đường dẫn đầy đủ, có nút "Chép đường dẫn". Tắt được 2 việc này bằng ô trong phần "Lưu vào".
 - Bộ tool Photoshop giờ chỉ chứa tool Photoshop: plugin SketchUp "Mặt bằng xiên" đã chuyển sang kho riêng BoToolSketchUp (chia sẻ cho ai thì người đó chỉ nhận đúng bộ của phần mềm đó).
 - SketchUp Mặt bằng xiên v1.1.0: tự cập nhật như panel Photoshop: mở công cụ là tự kiểm tra, có bản mới thì hiện khung "🔔 Có bản mới", bấm "⬇ Cập nhật ngay" rồi tắt mở lại SketchUp; link "Kiểm tra cập nhật" để kiểm tra tay.
 - HatAnh.jsx v1.0.0: tool mới "Hạt ảnh": phủ 1 lớp hạt nhẹ như ảnh phim (hợp ảnh nền tối) hoặc vân giấy vẽ (hợp ảnh nền sáng), chỉnh lượng hạt, độ mềm, độ đậm; dùng cho ảnh mặt bằng xiên xuất từ SketchUp.

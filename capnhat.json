@@ -64,12 +64,16 @@
     {
       "path": "XuatArtboardNen.jsx",
       "name": "Xuất artboard nén theo dung lượng",
-      "version": "1.6.0",
-      "date": "2026-11-25",
-      "notes": "Nút \"Dừng\" (hoặc Esc) trong khung tiến độ khi đang xuất; dừng là hủy ngay, không để lại file xuất dở, file PSD vẫn nguyên."
+      "version": "1.7.0",
+      "date": "2026-11-26",
+      "notes": "Xuất xong tự mở File Explorer và bôi chọn đúng file vừa xuất (sửa lỗi chỉ mở thư mục mà không chọn file); tên file tự gắn ngày giờ (ví dụ \"Port_2026-11-26_10h43.pdf\", JPG/PNG thì vào thư mục riêng cùng tên) để không trùng, dễ tìm; bảng kết quả ghi rõ tên và đường dẫn đầy đủ, có nút \"Chép đường dẫn\". Tắt được 2 việc này bằng ô trong phần \"Lưu vào\"."
     }
   ],
   "news": [
+    {
+      "date": "2026-11-26",
+      "text": "XuatArtboardNen.jsx v1.7.0: xuất xong tự mở File Explorer và bôi chọn đúng file vừa xuất (sửa lỗi chỉ mở thư mục mà không chọn file); tên file tự gắn ngày giờ (ví dụ \"Port_2026-11-26_10h43.pdf\", JPG/PNG thì vào thư mục riêng cùng tên) để không trùng, dễ tìm; bảng kết quả ghi rõ tên và đường dẫn đầy đủ, có nút \"Chép đường dẫn\". Tắt được 2 việc này bằng ô trong phần \"Lưu vào\"."
+    },
     {
       "date": "2026-11-26",
       "text": "Bộ tool Photoshop giờ chỉ chứa tool Photoshop: plugin SketchUp \"Mặt bằng xiên\" đã chuyển sang kho riêng BoToolSketchUp (chia sẻ cho ai thì người đó chỉ nhận đúng bộ của phần mềm đó)."
@@ -105,10 +109,6 @@
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.6.0: ĐÃ TÌM RA lỗi số trang trái nằm giữa: Photoshop hiểu sai một kiểu câu lệnh chọn trái/giữa/phải nên \"trái\" bị đọc thành \"giữa\". Đã sửa, số trang chẵn giờ nằm đúng góc trái; bỏ bảng thông tin kiểm tra."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "XoayIsometric.jsx v1.6.1: sửa cùng loại lỗi đó ở chỗ chọn mặt Trên/Trái/Phải (chọn \"Trên\" có thể bị hiểu thành \"Phải\")."
     }
   ]
 }
