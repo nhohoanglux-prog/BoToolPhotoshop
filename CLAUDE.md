@@ -40,7 +40,7 @@ HuongDan.txt                      hướng dẫn cài 5 bước (UTF-8 có BOM, 
   @desc: Một dòng mô tả ngắn.
   @version: 1.0.0
   @date: 2026-11-25
-  @icon: box            (không bắt buộc, tên icon Lucide, xem danh sách bên dưới)
+  @icon: box            (không bắt buộc, tên icon Lucide, xem danh sách ở mục Panel bên trên)
 */
 ```
 
