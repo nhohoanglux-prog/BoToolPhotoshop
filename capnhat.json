@@ -34,6 +34,13 @@
       "notes": "Có khung tiến độ và nút \"Dừng\" (hoặc Esc) khi đang đánh số; dừng là trả file về y như cũ."
     },
     {
+      "path": "HatAnh.jsx",
+      "name": "Hạt ảnh (grain, giấy vẽ)",
+      "version": "1.0.0",
+      "date": "2026-11-26",
+      "notes": "Tool mới \"Hạt ảnh\": phủ 1 lớp hạt nhẹ như ảnh phim (hợp ảnh nền tối) hoặc vân giấy vẽ (hợp ảnh nền sáng), chỉnh lượng hạt, độ mềm, độ đậm; dùng cho ảnh mặt bằng xiên xuất từ SketchUp."
+    },
+    {
       "path": "KeDuongGiong.jsx",
       "name": "Đường gióng artboard",
       "version": "1.1.0",
@@ -65,6 +72,14 @@
   "news": [
     {
       "date": "2026-11-26",
+      "text": "HatAnh.jsx v1.0.0: tool mới \"Hạt ảnh\": phủ 1 lớp hạt nhẹ như ảnh phim (hợp ảnh nền tối) hoặc vân giấy vẽ (hợp ảnh nền sáng), chỉnh lượng hạt, độ mềm, độ đậm; dùng cho ảnh mặt bằng xiên xuất từ SketchUp."
+    },
+    {
+      "date": "2026-11-26",
+      "text": "Plugin SketchUp \"Mặt bằng xiên\" v1.0.0 (cài riêng bằng file MatBangXien.rbz): biến mô hình thành ảnh mặt bằng xiên kiểu axonometric: chọn cao độ cắt (gõ số, bấm vào mô hình, hoặc nhiều tầng), góc xiên 15–75° hay tự gõ, hướng đổ, xoay mặt bằng; 8 kiểu hiển thị (nền đen cắt trắng như ref, vẽ tay chì, bút bi xanh...), xuất PNG."
+    },
+    {
+      "date": "2026-11-26",
       "text": "KeDuongGiong.jsx v1.1.0: thêm nút \"Xoá hết đường gióng\" (xoá mọi đường gióng của artboard đang chọn hoặc tất cả, kể cả đường bạn tự kéo tay, khỏi kéo từng cái ra ngoài); xoá nhanh không mở hộp thoại: giữ phím Shift rồi bấm tool là xoá sạch đường gióng cả file (Ctrl+Z để lấy lại)."
     },
     {
@@ -94,14 +109,6 @@
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.5.1: font mặc định Montserrat (máy không có thì Arial); khi mở tool, nếu tìm thấy số trang cũ do bản trước tạo thừa (thường là số nằm giữa trang trái) thì hỏi bạn có xoá không."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "SoTrangTuDong.jsx v1.5.0: bỏ ô \"Đối xứng trang đôi\", thay bằng 2 ô chọn vị trí riêng: \"Trang chẵn\" (mặc định Dưới trái) và \"Trang lẻ\" (mặc định Dưới phải), tính theo số trang hiện trên trang."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "SoTrangTuDong.jsx v1.4.1: tự xoá các số trang cũ bị sót NGOÀI artboard từ những lần chạy trước (chúng hiện đè ở giữa trang trái mà tool không thấy); số mới luôn nằm trên cùng, trực tiếp trong artboard; \"Gỡ hết số\" xoá luôn số sót."
     }
   ]
 }
