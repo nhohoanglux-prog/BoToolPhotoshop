@@ -1,5 +1,8 @@
 # Nhật ký cập nhật
 
+## 2026-11-26
+- KeDuongGiong.jsx v1.0.0: tool mới "Đường gióng artboard": bấm biểu tượng là kẻ đường gióng để canh bố cục: đường giữa (chia đôi), chia 3 ngang, chia 3 dọc, lưới 3x3 hoặc tất cả; rê chuột vào biểu tượng mới hiện tên; áp cho artboard đang chọn hoặc tất cả artboard; Hủy là trả như cũ.
+
 ## 2026-11-25
 - SoTrangTuDong.jsx v1.7.0: màu số "Tự động" (bật sẵn): đo nền ngay chỗ đặt số trên từng trang, nền sáng thì số đen, nền tối thì số trắng; tắt ô "Tự động" để dùng 1 màu cố định như cũ.
 - SoTrangTuDong.jsx v1.6.0: ĐÃ TÌM RA lỗi số trang trái nằm giữa: Photoshop hiểu sai một kiểu câu lệnh chọn trái/giữa/phải nên "trái" bị đọc thành "giữa". Đã sửa, số trang chẵn giờ nằm đúng góc trái; bỏ bảng thông tin kiểm tra.

@@ -29,6 +29,13 @@
       "notes": "Có khung tiến độ và nút \"Dừng\" (hoặc Esc) khi đang đánh số; dừng là trả file về y như cũ."
     },
     {
+      "path": "KeDuongGiong.jsx",
+      "name": "Đường gióng artboard",
+      "version": "1.0.0",
+      "date": "2026-11-26",
+      "notes": "Tool mới \"Đường gióng artboard\": bấm biểu tượng là kẻ đường gióng để canh bố cục: đường giữa (chia đôi), chia 3 ngang, chia 3 dọc, lưới 3x3 hoặc tất cả; rê chuột vào biểu tượng mới hiện tên; áp cho artboard đang chọn hoặc tất cả artboard; Hủy là trả như cũ."
+    },
+    {
       "path": "SoTrangTuDong.jsx",
       "name": "Số trang tự động",
       "version": "1.7.0",
@@ -51,6 +58,10 @@
     }
   ],
   "news": [
+    {
+      "date": "2026-11-26",
+      "text": "KeDuongGiong.jsx v1.0.0: tool mới \"Đường gióng artboard\": bấm biểu tượng là kẻ đường gióng để canh bố cục: đường giữa (chia đôi), chia 3 ngang, chia 3 dọc, lưới 3x3 hoặc tất cả; rê chuột vào biểu tượng mới hiện tên; áp cho artboard đang chọn hoặc tất cả artboard; Hủy là trả như cũ."
+    },
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.7.0: màu số \"Tự động\" (bật sẵn): đo nền ngay chỗ đặt số trên từng trang, nền sáng thì số đen, nền tối thì số trắng; tắt ô \"Tự động\" để dùng 1 màu cố định như cũ."
@@ -86,10 +97,6 @@
     {
       "date": "2026-11-25",
       "text": "SoTrangTuDong.jsx v1.3.1: bấm \"Xem trước\" sẽ hiện thêm một bảng \"Thông tin kiểm tra\" (vị trí artboard và số trang của trang trái), bạn chụp gửi lại để tìm đúng lỗi số trang trái nằm giữa."
-    },
-    {
-      "date": "2026-11-25",
-      "text": "SoTrangTuDong.jsx v1.3.0: đổi hẳn cách đặt số: dùng lệnh Align của Photoshop canh theo chính artboard (như bấm canh trái/phải, canh dưới) rồi dời vào đúng lề, nên số ở trang trái phải nằm góc trái."
     }
   ]
 }
